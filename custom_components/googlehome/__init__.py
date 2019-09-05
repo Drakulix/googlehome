@@ -78,6 +78,7 @@ def update_tokens(hass):
         task = hass.async_create_task(refresh_tokens(hass))
     elif task.done():
         hass.data[TOKENS] = task.result()
+        print("Got new tokens", hass.data[TOKENS])
         task = None
 
 async def async_setup(hass, config):
@@ -144,6 +145,7 @@ class GoogleHomeClient:
         await asyncio.sleep(5)
         bluetooth_data = await bluetooth.get_scan_result(token)
         if not bluetooth_data:
+            print("Scan failed, scheduling token update")
             update_tokens(self.hass)
             return
 
@@ -166,6 +168,7 @@ class GoogleHomeClient:
         assistant = await Cast(host, self.hass.loop, session).assistant()
         alarms_data = await assistant.get_alarms(token)
         if not alarms_data:
+            print("Getting alarms failed, scheduling token update")
             update_tokens(self.hass)
             return
 
