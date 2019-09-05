@@ -74,7 +74,7 @@ def update_tokens(hass):
     if not task:
         task = hass.async_create_task(refresh_tokens, hass.data[ADB])
     elif task.done():
-        self.hass.data[TOKENS] = task.result()
+        hass.data[TOKENS] = task.result()
         task = None
 
 async def async_setup(hass, config):
