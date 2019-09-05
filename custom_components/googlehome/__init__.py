@@ -70,15 +70,15 @@ def refresh_tokens_sync(adb):
 task = None
 
 async def refresh_tokens(hass):
-    return await hass.async_add_executor_job(refresh_tokens_sync, hass.data[ADB])
+    data = await hass.async_add_executor_job(refresh_tokens_sync, hass.data[ADB])
+    hass.data[TOKENS] = data
+    print("Got new tokens", hass.data[TOKENS])
 
 def update_tokens(hass):
     global task
     if not task:
         task = hass.async_create_task(refresh_tokens(hass))
-    elif task.done():
-        hass.data[TOKENS] = task.result()
-        print("Got new tokens", hass.data[TOKENS])
+    if task.done():
         task = None
 
 async def async_setup(hass, config):
