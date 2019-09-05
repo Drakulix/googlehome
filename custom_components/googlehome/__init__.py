@@ -133,8 +133,11 @@ class GoogleHomeClient:
 
         _LOGGER.debug("Updating Google Home bluetooth for %s", host)
         session = async_get_clientsession(self.hass)
-
-        token = self.hass.data[TOKENS][self.hass.data[DOMAIN][host]["info"]["name"]]
+        
+        try:
+            token = self.hass.data[TOKENS][self.hass.data[DOMAIN][host]["info"]["name"]]
+        except KeyError:
+            return
 
         bluetooth = await Cast(host, self.hass.loop, session).bluetooth()
         await bluetooth.scan_for_devices(token)
@@ -153,7 +156,10 @@ class GoogleHomeClient:
         _LOGGER.debug("Updating Google Home bluetooth for %s", host)
         session = async_get_clientsession(self.hass)
 
-        token = self.hass.data[TOKENS][self.hass.data[DOMAIN][host]["info"]["name"]]
+        try:
+            token = self.hass.data[TOKENS][self.hass.data[DOMAIN][host]["info"]["name"]]
+        except KeyError:
+            return
         
         assistant = await Cast(host, self.hass.loop, session).assistant()
         alarms_data = await assistant.get_alarms(token)
