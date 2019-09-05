@@ -159,6 +159,8 @@ class GoogleHomeClient:
         try:
             token = self.hass.data[TOKENS][self.hass.data[DOMAIN][host]["info"]["name"]]
         except KeyError:
+            if not self.hass.data[DOMAIN][HOST].get("alarms"):
+                self.hass.data[DOMAIN][host]["alarms"] = {"timer": [], "alarm": []}
             return
         
         assistant = await Cast(host, self.hass.loop, session).assistant()
