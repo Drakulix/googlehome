@@ -70,7 +70,7 @@ def refresh_tokens_sync(adb):
 task = None
 
 async def refresh_tokens(hass):
-    return await hass.async_add_executor_job(refresh_tokens, hass.data[ADB])
+    return await hass.async_add_executor_job(refresh_tokens_sync, hass.data[ADB])
 
 def update_tokens(hass):
     global task
