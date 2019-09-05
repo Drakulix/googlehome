@@ -83,8 +83,10 @@ async def async_setup(hass, config):
     """Set up the Google Home component."""
     hass.data[DOMAIN] = {}
     hass.data[ADB]    = AdbClient(hass.config.path("home_graph.proto"), config[DOMAIN][CONF_ADB_HOST], config[DOMAIN][CONF_ADB_PORT], config[DOMAIN][CONF_ADB_DEVICE])
-    hass.data[TOKENS] = await hass.async_add_executor_job(refresh_tokens, hass.data[ADB])
+    hass.data[TOKENS] = {}
     hass.data[CLIENT] = GoogleHomeClient(hass)
+
+    update_tokens(hass)
 
     for device in config[DOMAIN][CONF_DEVICES]:
         hass.data[DOMAIN][device["host"]] = {}
