@@ -60,13 +60,22 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-
 def refresh_tokens(adb):
     from .decode import decode_proto
 
     proto = adb.pull_proto()
     tokens = decode_proto(proto)
     return tokens
+
+task = None
+
+def update_tokens(hass):
+    global task
+    if not task:
+        task = hass.async_create_task(refresh_tokens, hass.data[ADB])
+    elif task.done():
+        self.hass.data[TOKENS] = task.result()
+        task = None
 
 async def async_setup(hass, config):
     from .adb_helper import AdbClient
@@ -127,7 +136,7 @@ class GoogleHomeClient:
         await asyncio.sleep(5)
         bluetooth_data = await bluetooth.get_scan_result(token)
         if not bluetooth_data:
-            self.hass.data[TOKENS] = await self.hass.async_add_executor_job(refresh_tokens, self.hass.data[ADB])
+            update_tokens(self.hass)
             return
 
         self.hass.data[DOMAIN][host]["bluetooth"] = bluetooth_data
@@ -144,7 +153,7 @@ class GoogleHomeClient:
         assistant = await Cast(host, self.hass.loop, session).assistant()
         alarms_data = await assistant.get_alarms(token)
         if not alarms_data:
-            self.hass.data[TOKENS] = await self.hass.async_add_executor_job(refresh_tokens, self.hass.data[ADB])
+            update_tokens(self.hass)
             return
 
         self.hass.data[DOMAIN][host]["alarms"] = alarms_data
