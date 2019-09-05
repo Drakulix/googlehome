@@ -72,7 +72,7 @@ task = None
 def update_tokens(hass):
     global task
     if not task:
-        task = hass.async_create_task(refresh_tokens, hass.data[ADB])
+        task = hass.async_create_task(hass.async_add_executor_job(refresh_tokens, hass.data[ADB]))
     elif task.done():
         hass.data[TOKENS] = task.result()
         task = None
