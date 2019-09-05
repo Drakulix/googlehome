@@ -60,7 +60,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-def refresh_tokens(adb):
+def refresh_tokens_sync(adb):
     from .decode import decode_proto
 
     proto = adb.pull_proto()
@@ -69,10 +69,13 @@ def refresh_tokens(adb):
 
 task = None
 
+async def refresh_tokens(hass):
+    return await hass.async_add_executor_job(refresh_tokens, hass.data[ADB])
+
 def update_tokens(hass):
     global task
     if not task:
-        task = hass.async_create_task(hass.async_add_executor_job(refresh_tokens, hass.data[ADB]))
+        task = hass.async_create_task(refresh_tokens(hass))
     elif task.done():
         hass.data[TOKENS] = task.result()
         task = None
