@@ -8,7 +8,6 @@ class AdbClient():
         self.adb = adbutils.AdbClient(host=adb_host, port=adb_port)
         if adb_address is not "":
             if ":" in adb_address:
-                self.tcp = adb_address
                 print(self.adb.connect(adb_address))
                 time.sleep(3)
             self.device = self.adb.device(serial=adb_address)
@@ -30,10 +29,9 @@ class AdbClient():
                 time.sleep(10)
                 i += 1
             if self.device.shell(["su", "-c", "(ls /data/data/com.google.android.apps.chromecast.app/files/home_graph*.proto >> /dev/null 2>&1 && echo yes) || echo no"]) == "no":
-                self.device.shell(["reboot"])
-                time.sleep(20)
-                if self.tcp:
-                    print(self.adb.connect(self.tcp))
+                if not self.tcp:
+                    self.device.shell(["reboot"])
+                    time.sleep(20)
             else:
                 break
 
