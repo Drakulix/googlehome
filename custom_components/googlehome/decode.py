@@ -9,6 +9,8 @@ class Reader:
         self.pos = buf.seek(0)
     
     def _read_exact(self, length):
+        if length == 0:
+            return b''
         val = self.buf.read(length)
         if len(val) == 0:
             raise EOFError
@@ -22,7 +24,7 @@ class Reader:
         result = 0
         while True:
             self.pos += 1
-            if self.pos >= self.len:
+            if self.pos > self.len:
                 raise EOFError
             i = ord(self._read_exact(1))
             result |= (i & 0x7f) << shift
@@ -41,7 +43,7 @@ class Reader:
         self.pos += 4
         if self.pos >= self.len:
             raise EOFError
-        return struct.unpack('<f', self.buf.read(4))
+        return struct.unpack('<f', self._read_exact(4))
 
     def byteseq(self): # string, bytes, sub-message
         length = self.varint()
@@ -77,52 +79,46 @@ def get_data(buf: io.IOBase):
             break
         id = abs(tag >> 3)
         wiretype = tag & 7
-        #print("Decoding:", wiretype)
-
-        try:
-            def bytes_helper(f):
-                buf = f.byteseq()
-                try:
-                    return get_data(io.BytesIO(buf))
-                except (KeyError, EOFError):
-                    if any(b < 32 for b in buf):
-                        return buf
-                    else:
-                        return buf.decode("utf-8")
-
-            def _append(id, out, func):
-                d = {}
-                d[str(id)] = func()
-                #print("Read:", d[id])
-                out.append(d)
-            append = lambda func: _append(id, out, func)
+        def bytes_helper(f):
+            buf = f.byteseq()
+            try:
+                data = get_data(io.BytesIO(buf), history=True)
+                return data
+            except (KeyError, EOFError):
+                if any(b < 32 for b in buf):
+                    return buf
+                else:
+                    return buf.decode("utf-8")
+       
+        def skip_type(f, wiretype):
+            def _skip_start_group(f):
+                while True:
+                    wiretype = f.varint() & 7
+                    if wiretype == 4:
+                        break
+                    skip_type(f, wiretype)
 
             {
-                0: lambda: append(lambda: f.varint()),
-                1: lambda: append(lambda: f.fixed64()),
-                2: lambda: append(lambda: bytes_helper(f)),
-                # IGNORE start_group
-                # IGNORE end_group
-                5: lambda: append(lambda: f.fixed32()),
+                0: lambda: f.skip(),
+                1: lambda: f.skip(8),
+                2: lambda: f.skip(f.varint()),
+                3: lambda: _skip_start_group(f),
+                5: lambda: f.skip(4),
             }[wiretype]()
-        except KeyError:
-            def skip_type(f, wiretype):
-                def _skip_start_group(f, wiretype):
-                    while True:
-                        wiretype = f.varint() & 7
-                        if wiretype == 4:
-                            break
-                        #print("Skipping:", wiretype)
-                        skip_type(f, wiretype)
 
-                {
-                    0: lambda: f.skip(),
-                    1: lambda: f.skip(8),
-                    2: lambda: f.skip(f.varint()),
-                    3: lambda: _skip_start_group(f, wiretype),
-                    5: lambda: f.skip(4),
-                }[wiretype]()
-            skip_type(f, wiretype)
+        def _append(id, out, func):
+            d = {}
+            d[str(id)] = func()
+            out.append(d)
+        append = lambda func: _append(id, out, func)
+
+        {
+            0: lambda: append(lambda: f.varint()),
+            1: lambda: append(lambda: f.fixed64()),
+            2: lambda: append(lambda: bytes_helper(f)),
+            3: lambda: skip_type(f, wiretype),
+            5: lambda: append(lambda: f.fixed32()),
+        }[wiretype]()
     return out
 
 
