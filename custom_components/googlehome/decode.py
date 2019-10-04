@@ -82,7 +82,7 @@ def get_data(buf: io.IOBase):
         def bytes_helper(f):
             buf = f.byteseq()
             try:
-                data = get_data(io.BytesIO(buf), history=True)
+                data = get_data(io.BytesIO(buf))
                 return data
             except (KeyError, EOFError):
                 if any(b < 32 for b in buf):
@@ -145,7 +145,6 @@ def decode_proto(buf: io.IOBase):
             #print(e)
             pass
     return tokens
-
 
 if __name__ == "__main__":
     import sys
