@@ -22,7 +22,7 @@ class AdbClient():
 
         while True:
             i = 0
-            while self.device.shell(["su", "-c", "(ls /data/data/com.google.android.apps.chromecast.app/files/home_graph*.proto >> /dev/null 2>&1 && echo yes) || echo no"]) == "no" and i < 20:
+            while self.device.shell(["su", "-c", "(ls /data/data/com.google.android.apps.chromecast.app/files/home_graph*.proto >> /dev/null 2>&1 && echo yes) || echo no"]) == "no" and i < 5:
                 print(self.device.shell(["ps", "-A", "|", "grep", "com.google.android.apps.chromecast.app", "|", "awk", "{print \$2}", "|", "su", "-c", "xargs kill"]))
                 time.sleep(5)
                 print(self.device.shell(["monkey", "--pct-syskeys", "0", "-p", "com.google.android.apps.chromecast.app", "-c", "android.intent.category.LAUNCHER", "1"]))
@@ -32,7 +32,7 @@ class AdbClient():
                 i += 1
             if self.device.shell(["su", "-c", "(ls /data/data/com.google.android.apps.chromecast.app/files/home_graph*.proto >> /dev/null 2>&1 && echo yes) || echo no"]) == "no":
                 if not self.tcp:
-                    self.device.shell(["reboot"])
+                    self.device.shell(["su", "-c", "reboot"])
                     time.sleep(20)
             else:
                 break
