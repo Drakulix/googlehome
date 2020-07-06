@@ -6,8 +6,6 @@ from .const import DOMAIN, CONF_USERNAME, CONF_PASSWORD, CONF_MASTER_TOKEN, CONF
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
-@staticmethod
-@callback
 def async_get_options_flow(config_entry):
     return GoogleHomeOptionsFlow()
 
