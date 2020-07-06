@@ -12,7 +12,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .auth import get_access_token
 from .const import CLIENT, DOMAIN, TOKENS, CONF_TRACK_ALARMS, CONF_TRACK_DEVICES, CONF_USERNAME, CONF_MASTER_TOKEN
-from .grpc.v1_pb2_grpc import StructuresServiceStub
+from .grpc.google.internal.home.foyer.v1_pb2_grpc import StructuresServiceStub
 
 _LOGGER = logging.getLogger(__name__)
 
