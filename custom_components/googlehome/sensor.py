@@ -6,7 +6,14 @@ from homeassistant.const import DEVICE_CLASS_TIMESTAMP
 from homeassistant.helpers.entity import Entity
 import homeassistant.util.dt as dt_util
 
-from . import CLIENT, DOMAIN as GOOGLEHOME_DOMAIN, NAME
+# borrow some cast functionality
+from homeassistant.components import zeroconf
+from homeassistant.components.cast.const import SIGNAL_CAST_DISCOVERED, KNOWN_CHROMECAST_INFO_KEY, DOMAIN as CAST_DOMAIN
+from homeassistant.components.cast.discovery import setup_internal_discovery
+from homeassistant.components.cast.helpers import ChromeCastZeroconf, ChromecastInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+from .const import CLIENT, DOMAIN, NAME
 
 SCAN_INTERVAL = timedelta(seconds=10)
 
@@ -16,33 +23,40 @@ ICON = "mdi:alarm"
 
 SENSOR_TYPES = {"timer": "Timer", "alarm": "Alarm"}
 
-
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the googlehome sensor platform."""
-    if discovery_info is None:
-        _LOGGER.warning("To use this you need to configure the 'googlehome' component")
-        return
+    async def async_cast_discovered(discover: ChromecastInfo):
+        if hass.data[DOMAIN][discover.host] is None:
+            hass.data[DOMAIN][discover.host] = {}
+        
+        await hass.data[CLIENT].update_info(discover.host)
+        data = hass.data[DOMAIN][discover.host]
+        info = data.get("info", {})
+        if info['device_info']['assistant_supported']:
+            devices = []
+            for condition in SENSOR_TYPES:
+                device = GoogleHomeAlarm(
+                    hass.data[CLIENT], condition, discover, info.get("name", NAME)
+                )
+                devices.append(device)
+            async_add_entities(devices, True)
+   
+    async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
+    # Re-play the callback for all past chromecasts, store the objects in
+    # a list to avoid concurrent modification resulting in exception.
+    for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
+        async_cast_discovered(hass, chromecast)
 
-    await hass.data[CLIENT].update_info(discovery_info["host"])
-    data = hass.data[GOOGLEHOME_DOMAIN][discovery_info["host"]]
-    info = data.get("info", {})
-
-    devices = []
-    for condition in SENSOR_TYPES:
-        device = GoogleHomeAlarm(
-            hass.data[CLIENT], condition, discovery_info, info.get("name", NAME)
-        )
-        devices.append(device)
-
-    async_add_entities(devices, True)
-
+    ChromeCastZeroconf.set_zeroconf(await zeroconf.async_get_instance(hass))
+    hass.async_add_executor_job(setup_internal_discovery, hass)
 
 class GoogleHomeAlarm(Entity):
     """Representation of a GoogleHomeAlarm."""
 
-    def __init__(self, client, condition, config, name):
+    def __init__(self, client, condition, device, name):
         """Initialize the GoogleHomeAlarm sensor."""
-        self._host = config["host"]
+        self._host = device.host
+        self._device = device
         self._client = client
         self._condition = condition
         self._name = None
@@ -53,7 +67,7 @@ class GoogleHomeAlarm(Entity):
     async def async_update(self):
         """Update the data."""
         await self._client.update_alarms(self._host)
-        data = self.hass.data[GOOGLEHOME_DOMAIN][self._host]
+        data = self.hass.data[DOMAIN][self._host]
 
         alarms = data.get("alarms")[self._condition]
         if not alarms:
@@ -79,6 +93,21 @@ class GoogleHomeAlarm(Entity):
     def device_class(self):
         """Return the device class."""
         return DEVICE_CLASS_TIMESTAMP
+
+    @property
+    def device_info(self):
+        """Return information about the device."""
+        cast_info = self._device
+
+        if cast_info.model_name == "Google Cast Group":
+            return None
+
+        return {
+            "name": cast_info.friendly_name,
+            "identifiers": {(CAST_DOMAIN, cast_info.uuid.replace("-", ""))},
+            "model": cast_info.model_name,
+            "manufacturer": cast_info.manufacturer,
+        }
 
     @property
     def available(self):

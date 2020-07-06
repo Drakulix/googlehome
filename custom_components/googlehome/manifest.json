@@ -1,12 +1,17 @@
 {
   "domain": "googlehome",
   "name": "Googlehome",
-  "documentation": "https://www.home-assistant.io/components/googlehome",
   "requirements": [
-    "adbutils==0.4.4"
+    "gpsoauth==0.4.1",
+    "grpcio==1.29.0",
+    "zeroconf>=0.25.1"
   ],
-  "dependencies": [],
+  "after_dependencies": [
+    "cast"
+  ],
   "codeowners": [
-    "@ludeeus"
-  ]
+    "@drakulix"
+  ],
+  "config_flow": true,
+  "zeroconf": ["_googlecast._tcp.local."]
 }

@@ -6,40 +6,60 @@ from homeassistant.components.device_tracker import DeviceScanner
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import slugify
 
-from . import CLIENT, DOMAIN as GOOGLEHOME_DOMAIN, NAME
+# borrow some cast functionality
+from homeassistant.components import zeroconf
+from homeassistant.components.cast.const import SIGNAL_CAST_DISCOVERED, KNOWN_CHROMECAST_INFO_KEY
+from homeassistant.components.cast.discovery import setup_internal_discovery
+from homeassistant.components.cast.helpers import ChromeCastZeroconf, ChromecastInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+from . import CLIENT, DOMAIN, NAME, CONF_RSSI_THRESHOLD, CONF_DEVICE_TYPES
 
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=10)
 
 
-async def async_setup_scanner(hass, config, async_see, discovery_info=None):
-    """Validate the configuration and return a Google Home scanner."""
-    if discovery_info is None:
-        _LOGGER.warning("To use this you need to configure the 'googlehome' component")
-        return False
-    scanner = GoogleHomeDeviceScanner(
-        hass, hass.data[CLIENT], discovery_info, async_see
-    )
-    return await scanner.async_init()
+async def async_setup_entry(hass, config_entry, async_see):
+    """Setup the Google Home scanner platform"""
+    async def async_cast_discovered(discover: ChromecastInfo):
+        if hass.data[DOMAIN][discover.host] is None:
+            hass.data[DOMAIN][discover.host] = {}
+        
+        await hass.data[CLIENT].update_info(discover.host)
+        data = hass.data[DOMAIN][discover.host]
+        info = data.get("info", {})
+        if info['device_info']['bluetooth_supported']:
+            scanner = GoogleHomeDeviceScanner(
+                hass, hass.data[CLIENT], config_entry, discover, async_see
+            )
+            return await scanner.async_init()
+    
+    async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
+    # Re-play the callback for all past chromecasts, store the objects in
+    # a list to avoid concurrent modification resulting in exception.
+    for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
+        async_cast_discovered(hass, chromecast)
 
+    ChromeCastZeroconf.set_zeroconf(await zeroconf.async_get_instance(hass))
+    hass.async_add_executor_job(setup_internal_discovery, hass)
 
 class GoogleHomeDeviceScanner(DeviceScanner):
     """This class queries a Google Home unit."""
 
-    def __init__(self, hass, client, config, async_see):
+    def __init__(self, hass, client, config, device, async_see):
         """Initialize the scanner."""
         self.async_see = async_see
         self.hass = hass
-        self.rssi = config["rssi_threshold"]
-        self.device_types = config["device_types"]
-        self.host = config["host"]
+        self.rssi = config[CONF_RSSI_THRESHOLD]
+        self.device_types = config[CONF_DEVICE_TYPES]
+        self.host = device.host
         self.client = client
 
     async def async_init(self):
         """Further initialize connection to Google Home."""
         await self.client.update_info(self.host)
-        data = self.hass.data[GOOGLEHOME_DOMAIN][self.host]
+        data = self.hass.data[DOMAIN][self.host]
         info = data.get("info", {})
         connected = bool(info)
         if connected:
@@ -53,7 +73,7 @@ class GoogleHomeDeviceScanner(DeviceScanner):
         """Ensure the information from Google Home is up to date."""
         _LOGGER.debug("Checking Devices on %s", self.host)
         await self.client.update_bluetooth(self.host)
-        data = self.hass.data[GOOGLEHOME_DOMAIN][self.host]
+        data = self.hass.data[DOMAIN][self.host]
         info = data.get("info")
         bluetooth = data.get("bluetooth")
         if info is None or bluetooth is None:

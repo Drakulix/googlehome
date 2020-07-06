@@ -2,115 +2,56 @@
 import logging
 
 import asyncio
-import voluptuous as vol
-from homeassistant.const import CONF_DEVICES, CONF_HOST
+import grpc
+
+from homeassistant import config_entries
 from homeassistant.helpers import discovery
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+
+from .auth import get_access_token
+from .const import CLIENT, DOMAIN, TOKENS, CONF_TRACK_ALARMS, CONF_TRACK_DEVICES, CONF_USERNAME, CONF_MASTER_TOKEN
+from .grpc.v1_pb2_grpc import StructuresServiceStub
+
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "googlehome"
-CLIENT = "googlehome_client"
-ADB    = "googlehome_adb"
-TOKENS = "googlehome_tokens"
-
-NAME = "GoogleHome"
-
-CONF_ADB_HOST = "adb_host"
-CONF_ADB_PORT = "adb_port"
-CONF_ADB_DEVICE = "adb_device"
-CONF_DEVICE_TYPES = "device_types"
-CONF_RSSI_THRESHOLD = "rssi_threshold"
-CONF_TRACK_ALARMS = "track_alarms"
-CONF_TRACK_DEVICES = "track_devices"
-
-DEVICE_TYPES = [1, 2, 3]
-DEFAULT_RSSI_THRESHOLD = -70
-DEFAULT_ADB_HOST = "127.0.0.1"
-DEFAULT_ADB_PORT = 5037
-DEFAULT_ADB_DEVICE = ""
-
-DEVICE_CONFIG = vol.Schema(
-    {
-        vol.Required(CONF_HOST): cv.string,
-        vol.Optional(CONF_DEVICE_TYPES, default=DEVICE_TYPES): vol.All(
-            cv.ensure_list, [vol.In(DEVICE_TYPES)]
-        ),
-        vol.Optional(CONF_RSSI_THRESHOLD, default=DEFAULT_RSSI_THRESHOLD): vol.Coerce(
-            int
-        ),
-        vol.Optional(CONF_TRACK_ALARMS, default=False): cv.boolean,
-        vol.Optional(CONF_TRACK_DEVICES, default=True): cv.boolean,
-    }
-)
-
-
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_DEVICES): vol.All(cv.ensure_list, [DEVICE_CONFIG]),
-                vol.Optional(CONF_ADB_HOST, default=DEFAULT_ADB_HOST): cv.string,
-                vol.Optional(CONF_ADB_PORT, default=DEFAULT_ADB_PORT): cv.port,
-                vol.Optional(CONF_ADB_DEVICE, default=DEFAULT_ADB_DEVICE): cv.string,
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
-
-def refresh_tokens_sync(adb):
-    from .decode import decode_proto
-
-    proto = adb.pull_proto()
-    tokens = decode_proto(proto)
-    return tokens
-
-task = None
-
-async def refresh_tokens(hass):
-    data = await hass.async_add_executor_job(refresh_tokens_sync, hass.data[ADB])
-    hass.data[TOKENS] = data
-    print("Got new tokens", hass.data[TOKENS])
-
-def update_tokens(hass):
-    global task
-    if not task:
-        task = hass.async_create_task(refresh_tokens(hass))
-    if task.done():
-        task = None
-
 async def async_setup(hass, config):
-    from .adb_helper import AdbClient
-
     """Set up the Google Home component."""
     hass.data[DOMAIN] = {}
-    hass.data[ADB]    = AdbClient(hass.config.path("home_graph.proto"), config[DOMAIN][CONF_ADB_HOST], config[DOMAIN][CONF_ADB_PORT], config[DOMAIN][CONF_ADB_DEVICE])
     hass.data[TOKENS] = {}
     hass.data[CLIENT] = GoogleHomeClient(hass)
 
-    update_tokens(hass)
+    return True
 
-    for device in config[DOMAIN][CONF_DEVICES]:
-        hass.data[DOMAIN][device["host"]] = {}
-        if device[CONF_TRACK_DEVICES]:
-            hass.async_create_task(
-                discovery.async_load_platform(
-                    hass, "device_tracker", DOMAIN, device, config
-                )
-            )
-        if device[CONF_TRACK_ALARMS]:
-            hass.async_create_task(
-                discovery.async_load_platform(hass, "sensor", DOMAIN, device, config)
-            )
+async def async_setup_entry(hass, entry: config_entries.ConfigEntry):
+    await refresh_tokens(hass, entry)
+
+    if entry[CONF_TRACK_ALARMS]:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "sensor")
+        )
+    if entry[CONF_TRACK_DEVICES]:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, "device_tracker")
+        )
 
     return True
+
+async def refresh_tokens(hass, entry):
+    access_token = get_access_token(entry[CONF_USERNAME], entry[CONF_MASTER_TOKEN])
+    channel = grpc.channel('googlehomefoyer-pa.googleapis.com:443')
+    service = StructuresServiceStub(channel)
+    resp = service.GetHomeGraph()
+    data = resp.value['home']['devices']
+    for device in data:
+        # this is the 'cloud device id'
+        hass.data[TOKENS][device['deviceInfo']['projectInfo']['string2']] = device['localAuthToken']
 
 class GoogleHomeClient:
     """Handle all communication with the Google Home unit."""
 
-    def __init__(self, hass):
+    def __init__(self, hass, host):
         """Initialize the Google Home Client."""
         self.hass = hass
         self._connected = None
@@ -136,7 +77,8 @@ class GoogleHomeClient:
         session = async_get_clientsession(self.hass)
         
         try:
-            token = self.hass.data[TOKENS][self.hass.data[DOMAIN][host]["info"]["name"]]
+            info = self.hass.data[DOMAIN][host]
+            token = self.hass.data[TOKENS][info['device_info']['cloud_device_id']]
         except KeyError:
             return
 
@@ -146,7 +88,7 @@ class GoogleHomeClient:
         bluetooth_data = await bluetooth.get_scan_result(token)
         if not bluetooth_data:
             print("Scan failed, scheduling token update")
-            update_tokens(self.hass)
+            hass.async_create_task(refresh_tokens(self.hass))
             return
 
         self.hass.data[DOMAIN][host]["bluetooth"] = bluetooth_data
@@ -159,7 +101,8 @@ class GoogleHomeClient:
         session = async_get_clientsession(self.hass)
 
         try:
-            token = self.hass.data[TOKENS][self.hass.data[DOMAIN][host]["info"]["name"]]
+            info = self.hass.data[DOMAIN][host]
+            token = self.hass.data[TOKENS][info['device_info']['cloud_device_id']]
         except KeyError:
             if not self.hass.data[DOMAIN][host].get("alarms"):
                 self.hass.data[DOMAIN][host]["alarms"] = {"timer": [], "alarm": []}
@@ -169,7 +112,7 @@ class GoogleHomeClient:
         alarms_data = await assistant.get_alarms(token)
         if not alarms_data:
             print("Getting alarms failed, scheduling token update")
-            update_tokens(self.hass)
+            hass.async_create_task(refresh_tokens(self.hass))
             return
 
         self.hass.data[DOMAIN][host]["alarms"] = alarms_data
