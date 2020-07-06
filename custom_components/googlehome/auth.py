@@ -1,6 +1,27 @@
 from uuid import getnode as getmac
 from gpsoauth import perform_master_login, perform_oauth
 
+def _create_mac_string(num, splitter=':'):
+    mac = hex(num)[2:]
+    if mac[-1] == 'L':
+        mac = mac[:-1]
+    pad = max(12 - len(mac), 0)
+    mac = '0' * pad + mac
+    mac = splitter.join([mac[x:x + 2] for x in range(0, 12, 2)])
+    mac = mac.upper()
+    return mac
+
+def _get_android_id():
+    mac_int = getmac()
+    if (mac_int >> 40) % 2:
+        raise OSError("a valid MAC could not be determined."
+                      " Provide an android_id (and be"
+                      " sure to provide the same one on future runs).")
+
+    android_id = _create_mac_string(mac_int)
+    android_id = android_id.replace(':', '')
+    return android_id
+
 device_id = _get_android_id()
 
 def get_master_token(username, password):
@@ -20,26 +41,3 @@ def get_access_token(username, master_token):
     if 'Auth' not in res:
         return None
     return res['Auth']
-
-def _get_android_id():
-    mac_int = getmac()
-    if (mac_int >> 40) % 2:
-        raise OSError("a valid MAC could not be determined."
-                      " Provide an android_id (and be"
-                      " sure to provide the same one on future runs).")
-
-    android_id = _create_mac_string(mac_int)
-    android_id = android_id.replace(':', '')
-    return android_id
-
-
-def _create_mac_string(num, splitter=':'):
-    mac = hex(num)[2:]
-    if mac[-1] == 'L':
-        mac = mac[:-1]
-    pad = max(12 - len(mac), 0)
-    mac = '0' * pad + mac
-    mac = splitter.join([mac[x:x + 2] for x in range(0, 12, 2)])
-    mac = mac.upper()
-    return mac
-
