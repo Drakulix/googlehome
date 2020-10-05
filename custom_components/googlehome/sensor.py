@@ -8,7 +8,11 @@ import homeassistant.util.dt as dt_util
 
 # borrow some cast functionality
 from homeassistant.components import zeroconf
-from homeassistant.components.cast.const import SIGNAL_CAST_DISCOVERED, KNOWN_CHROMECAST_INFO_KEY, DOMAIN as CAST_DOMAIN
+from homeassistant.components.cast.const import (
+    SIGNAL_CAST_DISCOVERED,
+    KNOWN_CHROMECAST_INFO_KEY,
+    DOMAIN as CAST_DOMAIN,
+)
 from homeassistant.components.cast.discovery import setup_internal_discovery
 from homeassistant.components.cast.helpers import ChromeCastZeroconf, ChromecastInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -23,24 +27,31 @@ ICON = "mdi:alarm"
 
 SENSOR_TYPES = {"timer": "Timer", "alarm": "Alarm"}
 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the googlehome sensor platform."""
-    async def async_cast_discovered(discover: ChromecastInfo):
+    print("Setup sensor")
+
+    async def async_cast_discovered(hass, discover: ChromecastInfo):
         if hass.data[DOMAIN][discover.host] is None:
             hass.data[DOMAIN][discover.host] = {}
-        
+
         await hass.data[CLIENT].update_info(discover.host)
         data = hass.data[DOMAIN][discover.host]
         info = data.get("info", {})
-        if info['device_info']['assistant_supported']:
+        if info["device_info"]["assistant_supported"]:
             devices = []
             for condition in SENSOR_TYPES:
                 device = GoogleHomeAlarm(
-                    hass.data[CLIENT], condition, discover, info.get("name", NAME)
+                    hass.data[CLIENT],
+                    config_entry,
+                    condition,
+                    discover,
+                    info.get("name", NAME),
                 )
                 devices.append(device)
             async_add_entities(devices, True)
-   
+
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
     # Re-play the callback for all past chromecasts, store the objects in
     # a list to avoid concurrent modification resulting in exception.
@@ -50,14 +61,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     ChromeCastZeroconf.set_zeroconf(await zeroconf.async_get_instance(hass))
     hass.async_add_executor_job(setup_internal_discovery, hass)
 
+
 class GoogleHomeAlarm(Entity):
     """Representation of a GoogleHomeAlarm."""
 
-    def __init__(self, client, condition, device, name):
+    def __init__(self, client, config_entry, condition, device, name):
         """Initialize the GoogleHomeAlarm sensor."""
         self._host = device.host
         self._device = device
         self._client = client
+        self._config_entry = config_entry
         self._condition = condition
         self._name = None
         self._state = None
@@ -66,7 +79,7 @@ class GoogleHomeAlarm(Entity):
 
     async def async_update(self):
         """Update the data."""
-        await self._client.update_alarms(self._host)
+        await self._client.update_alarms(self._host, self._config_entry)
         data = self.hass.data[DOMAIN][self._host]
 
         alarms = data.get("alarms")[self._condition]

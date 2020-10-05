@@ -2,9 +2,10 @@
   "domain": "googlehome",
   "name": "Googlehome",
   "requirements": [
+    "google-auth==1.19.2",
     "gpsoauth==0.4.1",
     "grpcio==1.29.0",
-    "zeroconf>=0.25.1"
+    "zeroconf>=0.27.1"
   ],
   "after_dependencies": [
     "cast"
@@ -13,5 +14,7 @@
     "@drakulix"
   ],
   "config_flow": true,
-  "zeroconf": ["_googlecast._tcp.local."]
+  "zeroconf": [
+    "_googlecast._tcp.local."
+  ]
 }
