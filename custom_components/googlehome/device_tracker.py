@@ -7,13 +7,11 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import slugify
 
 # borrow some cast functionality
-from homeassistant.components import zeroconf
 from homeassistant.components.cast.const import (
     SIGNAL_CAST_DISCOVERED,
     KNOWN_CHROMECAST_INFO_KEY,
 )
-from homeassistant.components.cast.discovery import setup_internal_discovery
-from homeassistant.components.cast.helpers import ChromeCastZeroconf, ChromecastInfo
+from homeassistant.components.cast.helpers import ChromecastInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import CLIENT, DOMAIN, NAME, CONF_RSSI_THRESHOLD, CONF_DEVICE_TYPES
@@ -44,10 +42,6 @@ async def async_setup_entry(hass, config_entry, async_see):
     # a list to avoid concurrent modification resulting in exception.
     for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
         async_cast_discovered(hass, chromecast)
-
-    ChromeCastZeroconf.set_zeroconf(await zeroconf.async_get_instance(hass))
-    hass.async_add_executor_job(setup_internal_discovery, hass)
-
 
 class GoogleHomeDeviceScanner(DeviceScanner):
     """This class queries a Google Home unit."""

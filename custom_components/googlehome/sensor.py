@@ -13,8 +13,7 @@ from homeassistant.components.cast.const import (
     KNOWN_CHROMECAST_INFO_KEY,
     DOMAIN as CAST_DOMAIN,
 )
-from homeassistant.components.cast.discovery import setup_internal_discovery
-from homeassistant.components.cast.helpers import ChromeCastZeroconf, ChromecastInfo
+from homeassistant.components.cast.helpers import ChromecastInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import CLIENT, DOMAIN, NAME
@@ -33,7 +32,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     print("Setup sensor")
 
     async def async_cast_discovered(hass, discover: ChromecastInfo):
-        print("DISCOVERED")
         if hass.data[DOMAIN][discover.host] is None:
             hass.data[DOMAIN][discover.host] = {}
 
@@ -51,17 +49,13 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     info.get("name", NAME),
                 )
                 devices.append(device)
-            async_add_entities(devices, True)
+            await async_add_entities(devices, True)
 
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
     # Re-play the callback for all past chromecasts, store the objects in
     # a list to avoid concurrent modification resulting in exception.
     for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
         async_cast_discovered(hass, chromecast)
-
-    ChromeCastZeroconf.set_zeroconf(await zeroconf.async_get_instance(hass))
-    hass.async_add_executor_job(setup_internal_discovery, hass)
-
 
 class GoogleHomeAlarm(Entity):
     """Representation of a GoogleHomeAlarm."""
