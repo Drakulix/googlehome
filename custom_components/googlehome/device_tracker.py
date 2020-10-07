@@ -27,8 +27,7 @@ async def async_setup_entry(hass, config_entry, async_see):
         hass.data[DOMAIN].setdefault(discover.host, {})
 
         await hass.data[CLIENT].update_info(discover.host)
-        data = hass.data[DOMAIN][discover.host]
-        info = data.get("info", {})
+        info = hass.data[DOMAIN][discover.host].get("info", { "device_info": {} })
         if info["device_info"]["bluetooth_supported"]:
             scanner = GoogleHomeDeviceScanner(
                 hass, hass.data[CLIENT], config_entry, discover, async_see

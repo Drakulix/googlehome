@@ -32,8 +32,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         hass.data[DOMAIN].setdefault(discover.host, {})
 
         await hass.data[CLIENT].update_info(discover.host)
-        data = hass.data[DOMAIN][discover.host]
-        info = data.get("info", {})
+        info = hass.data[DOMAIN][discover.host].get("info", { "device_info": {} })
         if info["device_info"]["assistant_supported"]:
             devices = []
             for condition in SENSOR_TYPES:
