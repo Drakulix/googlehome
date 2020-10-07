@@ -28,8 +28,6 @@ SENSOR_TYPES = {"timer": "Timer", "alarm": "Alarm"}
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the googlehome sensor platform."""
-    print("Setup sensor")
-
     async def async_cast_discovered(discover: ChromecastInfo):
         hass.data[DOMAIN].setdefault(discover.host, {})
 
@@ -50,8 +48,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             await async_add_entities(devices, True)
 
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
-    for chromecast in hass.data.get(KNOWN_CHROMECAST_INFO_KEY, []):
-        async_cast_discovered(chromecast)
+    for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
+        await async_cast_discovered(chromecast)
 
 class GoogleHomeAlarm(Entity):
     """Representation of a GoogleHomeAlarm."""
