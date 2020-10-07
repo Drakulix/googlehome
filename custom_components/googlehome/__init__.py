@@ -84,13 +84,11 @@ class GoogleHomeClient:
 
         device_info = await Cast(host, self.hass.loop, session).info()
         for token in self.hass.data[TOKENS]:
-            try:
-                device_info_data = await device_info.get_device_info(token)
+            device_info_data = await device_info.get_device_info(token)
+            if device_info_data is not None:
                 self._connected = bool(device_info_data)
                 self.hass.data[DOMAIN][host]["info"] = device_info_data
                 return
-            except:
-                pass
 
     async def update_bluetooth(self, host, entry: config_entries.ConfigEntry):
         """Update bluetooth from Google Home."""
