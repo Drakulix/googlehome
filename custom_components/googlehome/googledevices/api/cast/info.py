@@ -28,6 +28,7 @@ class Info(object):  # pylint: disable=R0902
             "night_mode_params,user_eq,room_equalizer&options=detail"
         )
         response = await gdh_request(
+            schema="https" if token is not None else "http",
             host=self.host,
             port=CASTSECPORT if token is not None else CASTPORT,
             loop=self.loop,
