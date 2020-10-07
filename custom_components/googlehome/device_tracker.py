@@ -24,11 +24,12 @@ DEFAULT_SCAN_INTERVAL = timedelta(seconds=10)
 async def async_setup_entry(hass, config_entry, async_see):
     """Setup the Google Home scanner platform"""
     async def async_cast_discovered(discover: ChromecastInfo):
+        print(discover.uuid)
         hass.data[DOMAIN].setdefault(discover.host, {})
 
         await hass.data[CLIENT].update_info(discover.host)
         info = hass.data[DOMAIN][discover.host].get("info", { "device_info": {} })
-        if info["device_info"]["bluetooth_supported"]:
+        if info["device_info"]["capabilities"]["bluetooth_supported"]:
             scanner = GoogleHomeDeviceScanner(
                 hass, hass.data[CLIENT], config_entry, discover, async_see
             )

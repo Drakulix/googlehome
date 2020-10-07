@@ -19,7 +19,7 @@ class Info(object):  # pylint: disable=R0902
         self._locales = []
         self._app_device_id = {}
 
-    async def get_device_info(self):
+    async def get_device_info(self, token = None):
         """Get device information for the unit."""
         endpoint = "setup/eureka_info"
         params = (
@@ -29,10 +29,11 @@ class Info(object):  # pylint: disable=R0902
         )
         response = await gdh_request(
             host=self.host,
-            port=CASTPORT,
+            port=CASTSECPORT if token is not None else CASTPORT,
             loop=self.loop,
             session=self.session,
             endpoint=endpoint,
+            token=token,
             params=params,
             headers=HEADERS,
         )
