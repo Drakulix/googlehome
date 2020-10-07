@@ -24,7 +24,7 @@ DEFAULT_SCAN_INTERVAL = timedelta(seconds=10)
 async def async_setup_entry(hass, config_entry, async_see):
     """Setup the Google Home scanner platform"""
     print("Setup device_tracker")
-    async def async_cast_discovered(hass, discover: ChromecastInfo):
+    async def async_cast_discovered(discover: ChromecastInfo):
         if hass.data[DOMAIN][discover.host] is None:
             hass.data[DOMAIN][discover.host] = {}
 
@@ -42,7 +42,7 @@ async def async_setup_entry(hass, config_entry, async_see):
     print("Adding known chromecasts")
     for chromecast in hass.data.get(KNOWN_CHROMECAST_INFO_KEY, []):
         print("Adding chromecast: {}", chromecast.host)
-        async_cast_discovered(hass, chromecast)
+        async_cast_discovered(chromecast)
 
 class GoogleHomeDeviceScanner(DeviceScanner):
     """This class queries a Google Home unit."""
