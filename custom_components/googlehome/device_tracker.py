@@ -25,8 +25,7 @@ async def async_setup_entry(hass, config_entry, async_see):
     """Setup the Google Home scanner platform"""
     print("Setup device_tracker")
     async def async_cast_discovered(discover: ChromecastInfo):
-        if hass.data[DOMAIN][discover.host] is None:
-            hass.data[DOMAIN][discover.host] = {}
+        hass.data[DOMAIN].setdefault(discover.host, {})
 
         await hass.data[CLIENT].update_info(discover.host)
         data = hass.data[DOMAIN][discover.host]

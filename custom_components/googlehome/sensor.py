@@ -31,8 +31,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     print("Setup sensor")
 
     async def async_cast_discovered(discover: ChromecastInfo):
-        if hass.data[DOMAIN][discover.host] is None:
-            hass.data[DOMAIN][discover.host] = {}
+        hass.data[DOMAIN].setdefault(discover.host, {})
 
         await hass.data[CLIENT].update_info(discover.host)
         data = hass.data[DOMAIN][discover.host]
