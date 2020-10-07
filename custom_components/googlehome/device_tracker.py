@@ -37,10 +37,11 @@ async def async_setup_entry(hass, config_entry, async_see):
             )
             return await scanner.async_init()
 
+    print("Registering discovered signal")
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
-    # Re-play the callback for all past chromecasts, store the objects in
-    # a list to avoid concurrent modification resulting in exception.
-    for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
+    print("Adding known chromecasts")
+    for chromecast in hass.data.get(KNOWN_CHROMECAST_INFO_KEY, []):
+        print("Adding chromecast: {}", chromecast.host)
         async_cast_discovered(hass, chromecast)
 
 class GoogleHomeDeviceScanner(DeviceScanner):

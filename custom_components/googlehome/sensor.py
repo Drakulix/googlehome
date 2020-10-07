@@ -7,7 +7,6 @@ from homeassistant.helpers.entity import Entity
 import homeassistant.util.dt as dt_util
 
 # borrow some cast functionality
-from homeassistant.components import zeroconf
 from homeassistant.components.cast.const import (
     SIGNAL_CAST_DISCOVERED,
     KNOWN_CHROMECAST_INFO_KEY,
@@ -52,9 +51,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             await async_add_entities(devices, True)
 
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
-    # Re-play the callback for all past chromecasts, store the objects in
-    # a list to avoid concurrent modification resulting in exception.
-    for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
+    for chromecast in hass.data.get(KNOWN_CHROMECAST_INFO_KEY, []):
         async_cast_discovered(hass, chromecast)
 
 class GoogleHomeAlarm(Entity):
