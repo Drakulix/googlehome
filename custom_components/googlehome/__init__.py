@@ -83,7 +83,7 @@ class GoogleHomeClient:
         session = async_get_clientsession(self.hass)
 
         device_info = await Cast(host, self.hass.loop, session).info()
-        for token in self.hass.data[TOKENS]:
+        for token in self.hass.data[TOKENS].values():
             device_info_data = await device_info.get_device_info(token)
             if device_info_data is not None:
                 self._connected = bool(device_info_data)
