@@ -33,7 +33,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
         await hass.data[CLIENT].update_info(discover.host)
         info = hass.data[DOMAIN][discover.host].get("info", { "device_info": {} })
-        if info["device_info"]["capabilities"]["assistant_supported"]:
+        if info["device_info"]["capabilities"].get("assistant_supported", False):
             devices = []
             for condition in SENSOR_TYPES:
                 device = GoogleHomeAlarm(
