@@ -44,7 +44,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     info.get("name", NAME),
                 )
                 devices.append(device)
-            await async_add_entities(devices, True)
+            async_add_entities(devices, True)
 
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
     for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
@@ -70,13 +70,13 @@ class GoogleHomeAlarm(Entity):
         await self._client.update_alarms(self._host, self._config_entry)
         data = self.hass.data[DOMAIN][self._host]
 
-        alarms = data.get("alarms")[self._condition]
-        if not alarms:
+        alarms = data.get("alarms", {})
+        if self._condition not in alarms:
             self._available = False
             return
         self._available = True
         time_date = dt_util.utc_from_timestamp(
-            min(element["fire_time"] for element in alarms) / 1000
+            min(element["fire_time"] for element in alarms[self._condition]) / 1000
         )
         self._state = time_date.isoformat()
 
