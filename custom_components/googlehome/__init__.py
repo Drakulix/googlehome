@@ -86,6 +86,7 @@ class GoogleHomeClient:
         for token in self.hass.data[TOKENS].values():
             device_info_data = await device_info.get_device_info(token)
             if device_info_data is not None:
+                print(device_info_data)
                 self._connected = bool(device_info_data)
                 self.hass.data[DOMAIN][host]["info"] = device_info_data
                 return
