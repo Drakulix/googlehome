@@ -20,6 +20,7 @@ import voluptuous as vol
 
 class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
+    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     async def async_step_user(self, user_input):
         errors = {}
@@ -55,6 +56,9 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
+    def __init__(self, config_entry):
+        self.config_entry = config_entry
+    
     async def async_step_init(self, user_input=None):
         """Manage the options."""
         if user_input is not None:
