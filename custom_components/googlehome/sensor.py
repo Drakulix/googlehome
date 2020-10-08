@@ -71,7 +71,7 @@ class GoogleHomeAlarm(Entity):
         data = self.hass.data[DOMAIN][self._host]
 
         alarms = data.get("alarms", {})
-        if self._condition not in alarms:
+        if self._condition not in alarms or not alarms[self._condition]:
             self._available = False
             return
         self._available = True
