@@ -46,9 +46,10 @@ class GoogleHomeDeviceScanner(DeviceScanner):
         """Initialize the scanner."""
         self.async_see = async_see
         self.hass = hass
-        self.rssi = config[CONF_RSSI_THRESHOLD]
-        self.device_types = config[CONF_DEVICE_TYPES]
+        self.rssi = config.data[CONF_RSSI_THRESHOLD]
+        self.device_types = config.data[CONF_DEVICE_TYPES]
         self.host = device.host
+        self.name = device.friendly_name
         self.client = client
         self.config_entry = config
 
@@ -74,7 +75,6 @@ class GoogleHomeDeviceScanner(DeviceScanner):
         bluetooth = data.get("bluetooth")
         if info is None or bluetooth is None:
             return
-        google_home_name = info.get("name", NAME)
 
         for device in bluetooth:
             if (
@@ -87,7 +87,7 @@ class GoogleHomeDeviceScanner(DeviceScanner):
 
             attributes = {}
             attributes["btle_mac_address"] = device["mac_address"]
-            attributes["ghname"] = google_home_name
+            attributes["ghname"] = self.name
             attributes["rssi"] = device["rssi"]
             attributes["source_type"] = "bluetooth"
             if device["name"]:
