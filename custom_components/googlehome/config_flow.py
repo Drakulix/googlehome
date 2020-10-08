@@ -1,4 +1,5 @@
 from homeassistant import config_entries
+from homeassistant.core import callback
 from collections import OrderedDict
 from .auth import get_master_token
 from .const import (
