@@ -113,13 +113,14 @@ class GoogleHomeClient:
             self.hass.async_create_task(refresh_tokens(self.hass, entry))
             return
 
+        print(bluetooth_data)
         self.hass.data[DOMAIN][host]["bluetooth"] = bluetooth_data
 
     async def update_alarms(self, host, entry: config_entries.ConfigEntry):
         """Update alarms from Google Home."""
         from .googledevices.api.connect import Cast
 
-        _LOGGER.debug("Updating Google Home bluetooth for %s", host)
+        _LOGGER.debug("Updating Google Home alarm for %s", host)
         session = async_get_clientsession(self.hass)
 
         try:
@@ -137,4 +138,5 @@ class GoogleHomeClient:
             self.hass.async_create_task(refresh_tokens(self.hass, entry))
             return
 
+        print(alarms_data)
         self.hass.data[DOMAIN][host]["alarms"] = alarms_data
