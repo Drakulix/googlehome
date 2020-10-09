@@ -73,14 +73,12 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
                         CONF_RSSI_THRESHOLD,
                         default=self.config_entry.data.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),
                     ): vol.Coerce(int),
-                    
-                    #vol.Required(
-                    #    CONF_DEVICE_TYPES,
-                    #    default=self.config_entry.data.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES),
-                    #): vol.All(cv.ensure_list, [vol.In(DEFAULT_DEVICE_TYPES)]),
-                    
-                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.data.get(CONF_TRACK_DEVICES, True)): cv.boolean,
-                    vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.data.get(CONF_TRACK_ALARMS, False)): cv.boolean,
+                    vol.Required(
+                        CONF_DEVICE_TYPES,
+                        default=self.config_entry.data.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES),
+                    ): [vol.In(DEFAULT_DEVICE_TYPES)],
+                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.data.get(CONF_TRACK_DEVICES, True)): bool,
+                    vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.data.get(CONF_TRACK_ALARMS, False)): bool,
                 }
             ),
         )
