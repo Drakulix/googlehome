@@ -67,6 +67,8 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(
                 {
+                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.options.get(CONF_TRACK_DEVICES, True)): bool,
+                    vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.options.get(CONF_TRACK_ALARMS, False)): bool,
                     vol.Required(
                         CONF_RSSI_THRESHOLD,
                         default=self.config_entry.options.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),
@@ -75,8 +77,6 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
                     #    CONF_DEVICE_TYPES,
                     #    default=self.config_entry.data.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES),
                     #): [vol.In(DEFAULT_DEVICE_TYPES)],
-                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.options.get(CONF_TRACK_DEVICES, True)): bool,
-                    vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.options.get(CONF_TRACK_ALARMS, False)): bool,
                 }
             ),
         )
