@@ -88,7 +88,7 @@ class GoogleHomeClient:
         for token in self.hass.data[TOKENS].values():
             device_info_data = await device_info.get_device_info(token)
             if device_info_data is not None:
-                _LOGGER.trace(device_info_data)
+                _LOGGER.debug(device_info_data)
                 self._connected = bool(device_info_data)
                 self.hass.data[DOMAIN][host]["info"] = device_info_data
                 return
@@ -115,7 +115,7 @@ class GoogleHomeClient:
             self.hass.async_create_task(refresh_tokens(self.hass, entry))
             return
 
-        _LOGGER.trace(bluetooth_data)
+        _LOGGER.debug(bluetooth_data)
         self.hass.data[DOMAIN][host]["bluetooth"] = bluetooth_data
 
     async def update_alarms(self, host, entry: config_entries.ConfigEntry):
@@ -140,5 +140,5 @@ class GoogleHomeClient:
             self.hass.async_create_task(refresh_tokens(self.hass, entry))
             return
 
-        _LOGGER.trace(alarms_data)
+        _LOGGER.debug(alarms_data)
         self.hass.data[DOMAIN][host]["alarms"] = alarms_data
