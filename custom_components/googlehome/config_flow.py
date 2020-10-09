@@ -70,7 +70,7 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
                     vol.Required(
                         CONF_RSSI_THRESHOLD,
                         default=self.config_entry.options.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),
-                    ): vol.Coerce(int),
+                    ): int,
                     #vol.Required(
                     #    CONF_DEVICE_TYPES,
                     #    default=self.config_entry.data.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES),
