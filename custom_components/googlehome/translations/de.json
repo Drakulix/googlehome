@@ -15,16 +15,16 @@
       "auth_error": "Login fehlgeschlagen"
     }
   },
-  "option": {
-      "step": {
-          "init": {
-            "title": "Google Home Optionen",
-            "data": {
-                "track_alarms": "Erfasse gestellte Timer und Wecker",
-                "track_devices": "Verfolge Bluetooth Geräte in der Nähe",
-                "rssi_threshold": "RSSI Grenze (Bluetooth)"
-            }
-          }
+  "options": {
+    "step": {
+      "init": {
+        "title": "Google Home Optionen",
+        "data": {
+            "track_alarms": "Erfasse gestellte Timer und Wecker",
+            "track_devices": "Verfolge Bluetooth Geräte in der Nähe",
+            "rssi_threshold": "RSSI Grenze (Bluetooth)"
+        }
       }
+    }
   }
 }
