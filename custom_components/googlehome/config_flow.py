@@ -35,6 +35,8 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_USERNAME: user_input[CONF_USERNAME],
                         CONF_MASTER_TOKEN: mt,
+                    },
+                    options={
                         CONF_RSSI_THRESHOLD: DEFAULT_RSSI_THRESHOLD,
                         CONF_DEVICE_TYPES: DEFAULT_DEVICE_TYPES,
                         CONF_TRACK_DEVICES: True,
@@ -63,10 +65,10 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Manage the options."""
         if user_input is not None:
-            return self.async_update_entry(entry=self.config_entry, data=user_input)
+            return self.async_update_entry(entry=self.config_entry, options=user_input)
 
         return self.async_show_form(
-            step_id="options",
+            step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Required(
