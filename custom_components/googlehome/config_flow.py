@@ -53,7 +53,7 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return GoogleHomeOptionsFlow()
+        return GoogleHomeOptionsFlow(config_entry)
 
 
 class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
