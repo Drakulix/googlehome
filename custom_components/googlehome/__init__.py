@@ -88,7 +88,7 @@ class GoogleHomeClient:
         for token in self.hass.data[TOKENS].values():
             device_info_data = await device_info.get_device_info(token)
             if device_info_data is not None:
-                print(device_info_data)
+                _LOGGER.trace(device_info_data)
                 self._connected = bool(device_info_data)
                 self.hass.data[DOMAIN][host]["info"] = device_info_data
                 return
@@ -111,11 +111,11 @@ class GoogleHomeClient:
         await asyncio.sleep(5)
         bluetooth_data = await bluetooth.get_scan_result(token)
         if not bluetooth_data:
-            print("Scan failed, scheduling token update")
+            _LOGGER.debug("Scan failed, scheduling token update")
             self.hass.async_create_task(refresh_tokens(self.hass, entry))
             return
 
-        print(bluetooth_data)
+        _LOGGER.trace(bluetooth_data)
         self.hass.data[DOMAIN][host]["bluetooth"] = bluetooth_data
 
     async def update_alarms(self, host, entry: config_entries.ConfigEntry):
@@ -136,9 +136,9 @@ class GoogleHomeClient:
         assistant = await Cast(host, self.hass.loop, session).assistant()
         alarms_data = await assistant.get_alarms(token)
         if not alarms_data:
-            print("Getting alarms failed, scheduling token update")
+            _LOGGER.debug("Getting alarms failed, scheduling token update")
             self.hass.async_create_task(refresh_tokens(self.hass, entry))
             return
 
-        print(alarms_data)
+        _LOGGER.trace(alarms_data)
         self.hass.data[DOMAIN][host]["alarms"] = alarms_data
