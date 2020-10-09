@@ -66,19 +66,19 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
             return self.async_update_entry(entry=self.config_entry, data=user_input)
 
         return self.async_show_form(
-            step_id="init",
+            step_id="options",
             data_schema=vol.Schema(
                 {
                     vol.Required(
                         CONF_RSSI_THRESHOLD,
-                        default=self.config_entry.options.get(CONF_RSSI_THRESHOLD),
+                        default=self.config_entry.data.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),
                     ): vol.Coerce(int),
                     vol.Required(
                         CONF_DEVICE_TYPES,
-                        default=self.config_entry.options.get(CONF_DEVICE_TYPES),
+                        default=self.config_entry.data.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES),
                     ): vol.All(cv.ensure_list, [vol.In(DEFAULT_DEVICE_TYPES)]),
-                    vol.Required(CONF_TRACK_ALARMS, default=False): cv.boolean,
-                    vol.Required(CONF_TRACK_DEVICES, default=True): cv.boolean,
+                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.get(CONF_TRACK_DEVICES, True)): cv.boolean,
+                    vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.get(CONF_TRACK_ALARMS, False)): cv.boolean,
                 }
             ),
         )
