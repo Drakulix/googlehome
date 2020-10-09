@@ -18,7 +18,6 @@
   "options": {
     "step": {
       "init": {
-        "title": "Google Home Optionen",
         "data": {
             "track_alarms": "Erfasse gestellte Timer und Wecker",
             "track_devices": "Verfolge Bluetooth Geräte in der Nähe",

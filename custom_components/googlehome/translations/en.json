@@ -18,7 +18,6 @@
   "options": {
     "step": {
       "init": {
-        "title": "Google Home Options",
         "data": {
             "track_alarms": "Monitor Alarms",
             "track_devices": "Monitor Bluetooth Devices",
