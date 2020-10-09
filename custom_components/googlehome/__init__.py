@@ -18,6 +18,8 @@ from .const import (
     CONF_TRACK_DEVICES,
     CONF_USERNAME,
     CONF_MASTER_TOKEN,
+    DEFAULT_TRACK_ALARMS,
+    DEFAULT_TRACK_DEVICES
 )
 from .google.internal.home.foyer.v1_pb2 import GetHomeGraphRequest
 from .google.internal.home.foyer.v1_pb2_grpc import StructuresServiceStub
@@ -37,11 +39,11 @@ async def async_setup(hass, config):
 async def async_setup_entry(hass, entry: config_entries.ConfigEntry):
     await refresh_tokens(hass, entry)
 
-    if entry.data[CONF_TRACK_ALARMS]:
+    if entry.options.get(CONF_TRACK_ALARMS, DEFAULT_TRACK_ALARMS):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "sensor")
         )
-    if entry.data[CONF_TRACK_DEVICES]:
+    if entry.options.get(CONF_TRACK_DEVICES, DEFAULT_TRACK_DEVICES):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, "device_tracker")
         )

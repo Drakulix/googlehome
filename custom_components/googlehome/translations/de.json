@@ -1,0 +1,30 @@
+{
+  "title": "Google Home",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Bei Google anmelden",
+        "description": "Bitte gebe deine Logindaten zu einem mit deinen Google Home oder Google Nest Geräten verknüpften Google Account ein. Wenn du 2-factor-Authentifizierung nutzt, brauchst du ein Application Password. Dieses kann nach erfolgreicher Einrichtung der Integration wieder gelöscht werden.",
+        "data": {
+            "username": "Google Account",
+            "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "auth_error": "Login fehlgeschlagen"
+    }
+  },
+  "option": {
+      "step": {
+          "init": {
+            "title": "Google Home Optionen",
+            "data": {
+                "track_alarms": "Erfasse gestellte Timer und Wecker",
+                "track_devices": "Verfolge Bluetooth Geräte in der Nähe",
+                "rssi_threshold": "RSSI Grenze (Bluetooth)"
+            }
+          }
+      }
+  }
+}

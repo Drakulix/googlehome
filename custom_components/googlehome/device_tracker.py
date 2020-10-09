@@ -14,7 +14,7 @@ from homeassistant.components.cast.const import (
 from homeassistant.components.cast.helpers import ChromecastInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from .const import CLIENT, DOMAIN, NAME, CONF_RSSI_THRESHOLD, CONF_DEVICE_TYPES
+from .const import CLIENT, DOMAIN, NAME, CONF_RSSI_THRESHOLD, CONF_DEVICE_TYPES, DEFAULT_RSSI_THRESHOLD, DEFAULT_DEVICE_TYPES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,8 +45,8 @@ class GoogleHomeDeviceScanner(DeviceScanner):
         """Initialize the scanner."""
         self.async_see = async_see
         self.hass = hass
-        self.rssi = config.data[CONF_RSSI_THRESHOLD]
-        self.device_types = config.data[CONF_DEVICE_TYPES]
+        self.rssi = config.options.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),
+        self.device_types = config.options.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES),
         self.host = device.host
         self.name = device.friendly_name
         self.client = client

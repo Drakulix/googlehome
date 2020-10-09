@@ -35,12 +35,10 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_USERNAME: user_input[CONF_USERNAME],
                         CONF_MASTER_TOKEN: mt,
-                        CONF_RSSI_THRESHOLD: DEFAULT_RSSI_THRESHOLD,
-                        CONF_DEVICE_TYPES: DEFAULT_DEVICE_TYPES,
-                        CONF_TRACK_DEVICES: True,
-                        CONF_TRACK_ALARMS: False,
                     },
                 )
+            else:
+                errors["base"] = "auth_error"
 
         data_schema = OrderedDict()
         data_schema[vol.Required(CONF_USERNAME)] = str
@@ -71,14 +69,14 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Required(
                         CONF_RSSI_THRESHOLD,
-                        default=self.config_entry.data.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),
+                        default=self.config_entry.options.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),
                     ): vol.Coerce(int),
                     #vol.Required(
                     #    CONF_DEVICE_TYPES,
                     #    default=self.config_entry.data.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES),
                     #): [vol.In(DEFAULT_DEVICE_TYPES)],
-                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.data.get(CONF_TRACK_DEVICES, True)): bool,
-                    vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.data.get(CONF_TRACK_ALARMS, False)): bool,
+                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.options.get(CONF_TRACK_DEVICES, True)): bool,
+                    vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.options.get(CONF_TRACK_ALARMS, False)): bool,
                 }
             ),
         )

@@ -1,0 +1,30 @@
+{
+  "title": "Google Home",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Login to Google",
+        "description": "Please provide login credentials to a linked google account of your google home and nest devices. If you are using 2-factor authentication, you need to use an application password. You may delete the application password once the integration is sucessfully setup.",
+        "data": {
+            "username": "Google Account",
+            "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "auth_error": "Login failed"
+    }
+  },
+  "option": {
+      "step": {
+          "init": {
+            "title": "Google Home Options",
+            "data": {
+                "track_alarms": "Monitor Alarms",
+                "track_devices": "Monitor Bluetooth Devices",
+                "rssi_threshold": "RSSI Threshold (Bluetooth)"
+            }
+          }
+      }
+  }
+}
