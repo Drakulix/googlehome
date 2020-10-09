@@ -101,7 +101,7 @@ class GoogleHomeClient:
         session = async_get_clientsession(self.hass)
 
         try:
-            info = self.hass.data[DOMAIN][host]
+            info = self.hass.data[DOMAIN][host]["info"]
             token = self.hass.data[TOKENS][info["device_info"]["cloud_device_id"]]
         except KeyError:
             return
@@ -126,7 +126,7 @@ class GoogleHomeClient:
         session = async_get_clientsession(self.hass)
 
         try:
-            info = self.hass.data[DOMAIN][host]
+            info = self.hass.data[DOMAIN][host]["info"]
             token = self.hass.data[TOKENS][info["device_info"]["cloud_device_id"]]
         except KeyError:
             if not self.hass.data[DOMAIN][host].get("alarms"):
