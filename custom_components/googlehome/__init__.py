@@ -91,7 +91,8 @@ class GoogleHomeClient:
                 _LOGGER.debug(device_info_data)
                 self._connected = bool(device_info_data)
                 self.hass.data[DOMAIN][host]["info"] = device_info_data
-                return
+                return True
+        return False
 
     async def update_bluetooth(self, host, entry: config_entries.ConfigEntry):
         """Update bluetooth from Google Home."""

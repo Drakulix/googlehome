@@ -31,20 +31,20 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async def async_cast_discovered(discover: ChromecastInfo):
         hass.data[DOMAIN].setdefault(discover.host, {})
 
-        await hass.data[CLIENT].update_info(discover.host)
-        info = hass.data[DOMAIN][discover.host].get("info", { "device_info": {} })
-        if info["device_info"]["capabilities"].get("assistant_supported", False):
-            devices = []
-            for condition in SENSOR_TYPES:
-                device = GoogleHomeAlarm(
-                    hass.data[CLIENT],
-                    config_entry,
-                    condition,
-                    discover,
-                    info.get("name", NAME),
-                )
-                devices.append(device)
-            async_add_entities(devices, True)
+        if await hass.data[CLIENT].update_info(discover.host):
+            info = hass.data[DOMAIN][discover.host].get("info", { "device_info": {} })
+            if info["device_info"]["capabilities"].get("assistant_supported", False):
+                devices = []
+                for condition in SENSOR_TYPES:
+                    device = GoogleHomeAlarm(
+                        hass.data[CLIENT],
+                        config_entry,
+                        condition,
+                        discover,
+                        info.get("name", NAME),
+                    )
+                    devices.append(device)
+                async_add_entities(devices, True)
 
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
     for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
