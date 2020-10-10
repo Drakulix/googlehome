@@ -2,10 +2,9 @@
   "domain": "googlehome",
   "name": "Googlehome",
   "requirements": [
-    "google-auth==1.19.2",
     "gpsoauth==0.4.1",
     "grpcio==1.31.0",
-    "zeroconf>=0.27.1"
+    "git+https://github.com/ludeeus/googledevices.git@master#googledevices==1.0.3"
   ],
   "after_dependencies": [
     "cast"

@@ -79,7 +79,7 @@ class GoogleHomeClient:
 
     async def update_info(self, host):
         """Update data from Google Home."""
-        from .googledevices.api.connect import Cast
+        from googledevices.api.connect import Cast
 
         _LOGGER.debug("Updating Google Home info for %s", host)
         session = async_get_clientsession(self.hass)
@@ -95,7 +95,7 @@ class GoogleHomeClient:
 
     async def update_bluetooth(self, host, entry: config_entries.ConfigEntry):
         """Update bluetooth from Google Home."""
-        from .googledevices.api.connect import Cast
+        from googledevices.api.connect import Cast
 
         _LOGGER.debug("Updating Google Home bluetooth for %s", host)
         session = async_get_clientsession(self.hass)
@@ -120,7 +120,7 @@ class GoogleHomeClient:
 
     async def update_alarms(self, host, entry: config_entries.ConfigEntry):
         """Update alarms from Google Home."""
-        from .googledevices.api.connect import Cast
+        from googledevices.api.connect import Cast
 
         _LOGGER.debug("Updating Google Home alarm for %s", host)
         session = async_get_clientsession(self.hass)
