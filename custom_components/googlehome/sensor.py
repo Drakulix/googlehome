@@ -44,6 +44,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         condition,
                         discover,
                         info.get("name", NAME),
+                        info["device_info"]["cloud_device_id"]
                     )
                     devices.append(device)
                 async_add_entities(devices, True)
@@ -55,7 +56,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class GoogleHomeAlarm(Entity):
     """Representation of a GoogleHomeAlarm."""
 
-    def __init__(self, client, config_entry, condition, device, name):
+    def __init__(self, client, config_entry, condition, device, name, cloud_device_id):
         """Initialize the GoogleHomeAlarm sensor."""
         self._host = device.host
         self._device = device
@@ -66,6 +67,7 @@ class GoogleHomeAlarm(Entity):
         self._state = None
         self._available = True
         self._name = "{} {}".format(name, SENSOR_TYPES[self._condition])
+        self._unique_id = cloud_device_id + '_' + condition
 
     async def async_update(self):
         """Update the data."""
@@ -111,6 +113,11 @@ class GoogleHomeAlarm(Entity):
             "model": cast_info.model_name,
             "manufacturer": cast_info.manufacturer,
         }
+    
+    @property
+    def unique_id(self):
+        """Return the unique_id of the device."""
+        return self._unique_id
 
     @property
     def available(self):
