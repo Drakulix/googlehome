@@ -25,6 +25,7 @@ ICON = "mdi:alarm"
 
 SENSOR_TYPES = {"timer": "Timer", "alarm": "Alarm"}
 
+active_devices = set()
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the googlehome sensor platform."""
@@ -32,8 +33,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         hass.data[DOMAIN].setdefault(discover.host, {})
 
         if await hass.data[CLIENT].update_info(discover.host):
-            info = hass.data[DOMAIN][discover.host].get("info", { "device_info": {} })
-            if info["device_info"]["capabilities"].get("assistant_supported", False):
+            info = hass.data[DOMAIN][discover.host]["info"]
+            if info["device_info"]["cloud_device_id"] not in active_devices and info["device_info"]["capabilities"].get("assistant_supported", False):
+                active_devices.add(info["device_info"]["cloud_device_id"])
                 devices = []
                 for condition in SENSOR_TYPES:
                     device = GoogleHomeAlarm(

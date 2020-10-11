@@ -75,7 +75,6 @@ class GoogleHomeClient:
     def __init__(self, hass):
         """Initialize the Google Home Client."""
         self.hass = hass
-        self._connected = None
 
     async def update_info(self, host):
         """Update data from Google Home."""
@@ -89,7 +88,6 @@ class GoogleHomeClient:
             device_info_data = await device_info.get_device_info(token)
             if device_info_data is not None:
                 _LOGGER.debug(device_info_data)
-                self._connected = bool(device_info_data)
                 self.hass.data[DOMAIN][host]["info"] = device_info_data
                 return True
         return False

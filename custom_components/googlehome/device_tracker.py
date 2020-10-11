@@ -20,6 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=10)
 
+active_devices = set()
 
 async def async_setup_entry(hass, config_entry, async_see):
     """Setup the Google Home scanner platform"""
@@ -27,12 +28,13 @@ async def async_setup_entry(hass, config_entry, async_see):
         hass.data[DOMAIN].setdefault(discover.host, {})
 
         if await hass.data[CLIENT].update_info(discover.host):
-            info = hass.data[DOMAIN][discover.host].get("info", { "device_info": {} })
-            if info["device_info"]["capabilities"].get("bluetooth_supported", False):
+            info = hass.data[DOMAIN][discover.host]["info"]
+            if info["device_info"]["cloud_device_id"] not in active_devices and info["device_info"]["capabilities"].get("bluetooth_supported", False):
+                active_devices.add(info["device_info"]["cloud_device_id"])
                 scanner = GoogleHomeDeviceScanner(
                     hass, hass.data[CLIENT], config_entry, discover, async_see
                 )
-                return await scanner.async_init()
+                await scanner.async_init()
 
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
     for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
@@ -56,13 +58,10 @@ class GoogleHomeDeviceScanner(DeviceScanner):
         """Further initialize connection to Google Home."""
         data = self.hass.data[DOMAIN][self.host]
         info = data.get("info", {})
-        connected = bool(info)
-        if connected:
-            await self.async_update()
-            async_track_time_interval(
-                self.hass, self.async_update, DEFAULT_SCAN_INTERVAL
-            )
-        return connected
+        await self.async_update()
+        async_track_time_interval(
+            self.hass, self.async_update, DEFAULT_SCAN_INTERVAL
+        )
 
     async def async_update(self, now=None):
         """Ensure the information from Google Home is up to date."""
