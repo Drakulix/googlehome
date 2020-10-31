@@ -69,7 +69,7 @@ class GoogleHomeDeviceScanner():
         data = self.hass.data[DOMAIN][self.host]
         info = data.get("info", {})
         await self.async_update()
-        self.removal = self.hass.async_track_time_interval(
+        self.removal = async_track_time_interval(
             self.hass, self.async_update, DEFAULT_SCAN_INTERVAL
         )
 
