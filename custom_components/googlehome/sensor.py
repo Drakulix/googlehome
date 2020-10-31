@@ -9,6 +9,7 @@ import homeassistant.util.dt as dt_util
 # borrow some cast functionality
 from homeassistant.components.cast.const import (
     SIGNAL_CAST_DISCOVERED,
+    SIGNAL_CAST_REMOVED,
     KNOWN_CHROMECAST_INFO_KEY,
     DOMAIN as CAST_DOMAIN,
 )
@@ -25,17 +26,19 @@ ICON = "mdi:alarm"
 
 SENSOR_TYPES = {"timer": "Timer", "alarm": "Alarm"}
 
-active_devices = set()
+active_devices = {}
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the googlehome sensor platform."""
+
     async def async_cast_discovered(discover: ChromecastInfo):
+        if discover.is_audio_group:
+            return
         hass.data[DOMAIN].setdefault(discover.host, {})
 
         if await hass.data[CLIENT].update_info(discover.host):
             info = hass.data[DOMAIN][discover.host]["info"]
             if info["device_info"]["cloud_device_id"] not in active_devices and info["device_info"]["capabilities"].get("assistant_supported", False):
-                active_devices.add(info["device_info"]["cloud_device_id"])
                 devices = []
                 for condition in SENSOR_TYPES:
                     device = GoogleHomeAlarm(
@@ -47,8 +50,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         info["device_info"]["cloud_device_id"]
                     )
                     devices.append(device)
+                active_devices[info["device_info"]["cloud_device_id"]] = devices
                 async_add_entities(devices, True)
 
+    async def async_cast_removed(info: ChromecastInfo):
+        if info["device_info"]["cloud_device_id"] in active_devices:
+            for entity in active_devices[info["device_info"]["cloud_device_id"]]:
+                await entity.async_remove()
+            del active_devices[info["device_info"]["cloud_device_id"]]
+
+    async_dispatcher_connect(hass, SIGNAL_CAST_REMOVED, async_cast_removed)
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
     for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
         await async_cast_discovered(chromecast)

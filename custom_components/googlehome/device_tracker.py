@@ -9,6 +9,7 @@ from homeassistant.util import slugify
 # borrow some cast functionality
 from homeassistant.components.cast.const import (
     SIGNAL_CAST_DISCOVERED,
+    SIGNAL_CAST_REMOVED,
     KNOWN_CHROMECAST_INFO_KEY,
 )
 from homeassistant.components.cast.helpers import ChromecastInfo
@@ -20,27 +21,35 @@ _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=10)
 
-active_devices = set()
+active_devices = {}
 
 async def async_setup_entry(hass, config_entry, async_see):
     """Setup the Google Home scanner platform"""
     async def async_cast_discovered(discover: ChromecastInfo):
+        if discover.is_audio_group:
+            return
         hass.data[DOMAIN].setdefault(discover.host, {})
 
         if await hass.data[CLIENT].update_info(discover.host):
             info = hass.data[DOMAIN][discover.host]["info"]
             if info["device_info"]["cloud_device_id"] not in active_devices and info["device_info"]["capabilities"].get("bluetooth_supported", False):
-                active_devices.add(info["device_info"]["cloud_device_id"])
                 scanner = GoogleHomeDeviceScanner(
                     hass, hass.data[CLIENT], config_entry, discover, async_see
                 )
+                active_devices[info["device_info"]["cloud_device_id"]] = scanner
                 await scanner.async_init()
 
+    async def async_cast_removed(info: ChromecastInfo):
+        if info["device_info"]["cloud_device_id"] in active_devices:
+            await active_devices[info["device_info"]["cloud_device_id"]].async_deinit()
+            del active_devices[info["device_info"]["cloud_device_id"]]
+
+    async_dispatcher_connect(hass, SIGNAL_CAST_REMOVED, async_cast_removed)
     async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
     for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
         await async_cast_discovered(chromecast)
 
-class GoogleHomeDeviceScanner(DeviceScanner):
+class GoogleHomeDeviceScanner():
     """This class queries a Google Home unit."""
 
     def __init__(self, hass, client, config, device, async_see):
@@ -53,15 +62,21 @@ class GoogleHomeDeviceScanner(DeviceScanner):
         self.name = device.friendly_name
         self.client = client
         self.config_entry = config
+        self.removal = None
 
     async def async_init(self):
         """Further initialize connection to Google Home."""
         data = self.hass.data[DOMAIN][self.host]
         info = data.get("info", {})
         await self.async_update()
-        async_track_time_interval(
+        self.removal = self.async_track_time_interval(
             self.hass, self.async_update, DEFAULT_SCAN_INTERVAL
         )
+
+    async def async_deinit(self):
+        if self.removal:
+            self.removal()
+        self.removal = None
 
     async def async_update(self, now=None):
         """Ensure the information from Google Home is up to date."""

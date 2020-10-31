@@ -23,7 +23,7 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
-    async def async_step_user(self, user_input):
+    async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
             mt = await self.hass.async_add_executor_job(
