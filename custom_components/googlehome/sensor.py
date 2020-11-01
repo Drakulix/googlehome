@@ -1,6 +1,11 @@
 """Support for Google Home alarm sensor."""
 from datetime import timedelta
 import logging
+import pychromecast
+from pychromecast.socket_client import (
+    CONNECTION_STATUS_CONNECTED,
+    CONNECTION_STATUS_DISCONNECTED,
+)
 
 from homeassistant.const import DEVICE_CLASS_TIMESTAMP
 from homeassistant.helpers.entity import Entity
@@ -13,56 +18,56 @@ from homeassistant.components.cast.const import (
     KNOWN_CHROMECAST_INFO_KEY,
     DOMAIN as CAST_DOMAIN,
 )
-from homeassistant.components.cast.helpers import ChromecastInfo
+from homeassistant.components.cast.helpers import ChromecastInfo, ChromeCastZeroconf
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import CLIENT, DOMAIN, NAME
+from .helpers import ChromecastMonitor
 
 SCAN_INTERVAL = timedelta(seconds=10)
-
 _LOGGER = logging.getLogger(__name__)
-
 ICON = "mdi:alarm"
-
 SENSOR_TYPES = {"timer": "Timer", "alarm": "Alarm"}
 
-active_devices = {}
-
+monitors = []
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the googlehome sensor platform."""
+    monitor = SensorMonitor()
+    await monitor.async_init(hass, config_entry, async_add_entities)
+    monitors.append(monitor)
 
-    async def async_cast_discovered(discover: ChromecastInfo):
-        if discover.is_audio_group:
-            return
-        hass.data[DOMAIN].setdefault(discover.host, {})
 
-        if await hass.data[CLIENT].update_info(discover.host):
-            info = hass.data[DOMAIN][discover.host]["info"]
-            if info["device_info"]["cloud_device_id"] not in active_devices and info["device_info"]["capabilities"].get("assistant_supported", False):
-                devices = []
-                for condition in SENSOR_TYPES:
-                    device = GoogleHomeAlarm(
-                        hass.data[CLIENT],
-                        config_entry,
-                        condition,
-                        discover,
-                        info.get("name", NAME),
-                        info["device_info"]["cloud_device_id"]
-                    )
-                    devices.append(device)
-                active_devices[info["device_info"]["cloud_device_id"]] = devices
-                async_add_entities(devices, True)
+class SensorMonitor(ChromecastMonitor):
+    async def async_init(self, hass, config_entry, async_add_entities):
+        self._config_entry = config_entry
+        self._async_add_entities = async_add_entities
+        await super().async_init(hass)
 
-    async def async_cast_removed(info: ChromecastInfo):
-        if info["device_info"]["cloud_device_id"] in active_devices:
-            for entity in active_devices[info["device_info"]["cloud_device_id"]]:
-                await entity.async_remove()
-            del active_devices[info["device_info"]["cloud_device_id"]]
+    async def supported(self, discover: ChromecastInfo) -> bool:
+        info = self._hass.data[DOMAIN][discover.uuid]["info"]
+        return info["device_info"]["capabilities"].get("assistant_supported", False)
 
-    async_dispatcher_connect(hass, SIGNAL_CAST_REMOVED, async_cast_removed)
-    async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, async_cast_discovered)
-    for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].values():
-        await async_cast_discovered(chromecast)
+    async def setup(self, discover: ChromecastInfo):
+        info = self._hass.data[DOMAIN][discover.uuid]["info"]
+        devices = []
+        for condition in SENSOR_TYPES:
+            device = GoogleHomeAlarm(
+                self._hass.data[CLIENT],
+                self._config_entry,
+                condition,
+                discover,
+                info.get("name", NAME),
+                info["device_info"]["cloud_device_id"]
+            )
+            devices.append(device)
+        self._async_add_entities(devices, True)
+        return devices
+
+    async def cleanup(self, discover):
+        info = self._hass.data[DOMAIN][discover]["info"]
+        for entity in self._active_devices[info["device_info"]["cloud_device_id"]]:
+            await entity.async_remove()
+
 
 class GoogleHomeAlarm(Entity):
     """Representation of a GoogleHomeAlarm."""
@@ -79,16 +84,21 @@ class GoogleHomeAlarm(Entity):
         self._available = True
         self._name = "{} {}".format(name, SENSOR_TYPES[self._condition])
         self._unique_id = cloud_device_id + '_' + condition
+        self._connected = True
 
     async def async_update(self):
         """Update the data."""
-        await self._client.update_alarms(self._host, self._config_entry)
-        data = self.hass.data[DOMAIN][self._host]
+        if not self._connected:
+            return
+
+        await self._client.update_alarms(self._host, self._device.uuid, self._config_entry)
+        data = self.hass.data[DOMAIN][self._device.uuid]
 
         alarms = data.get("alarms", {})
         if self._condition not in alarms or not alarms[self._condition]:
             self._available = False
             return
+
         self._available = True
         time_date = dt_util.utc_from_timestamp(
             min(element["fire_time"] for element in alarms[self._condition]) / 1000
@@ -139,3 +149,11 @@ class GoogleHomeAlarm(Entity):
     def icon(self):
         """Return the icon."""
         return ICON
+
+    def new_connection_status(self, connection_status):
+        if connection_status == CONNECTION_STATUS_CONNECTED:
+            _LOGGER.info("Disconnected")
+            self._connected = True
+        elif connection_status == CONNECTION_STATUS_DISCONNECTED:
+            _LOGGER.info("Connected")
+            self._connected = False

@@ -76,23 +76,25 @@ class GoogleHomeClient:
         """Initialize the Google Home Client."""
         self.hass = hass
 
-    async def update_info(self, host):
+    async def update_info(self, host, uuid):
         """Update data from Google Home."""
         from googledevices.api.connect import Cast
 
         _LOGGER.debug("Updating Google Home info for %s", host)
         session = async_get_clientsession(self.hass)
 
+        # eureka_info might not return something, if the device just started up
+        await asyncio.sleep(10)
         device_info = await Cast(host, self.hass.loop, session).info()
         for token in self.hass.data[TOKENS].values():
             device_info_data = await device_info.get_device_info(token)
             if device_info_data is not None:
                 _LOGGER.debug(device_info_data)
-                self.hass.data[DOMAIN][host]["info"] = device_info_data
+                self.hass.data[DOMAIN][uuid]["info"] = device_info_data
                 return True
         return False
 
-    async def update_bluetooth(self, host, entry: config_entries.ConfigEntry):
+    async def update_bluetooth(self, host, uuid, entry: config_entries.ConfigEntry):
         """Update bluetooth from Google Home."""
         from googledevices.api.connect import Cast
 
@@ -100,7 +102,7 @@ class GoogleHomeClient:
         session = async_get_clientsession(self.hass)
 
         try:
-            info = self.hass.data[DOMAIN][host]["info"]
+            info = self.hass.data[DOMAIN][uuid]["info"]
             token = self.hass.data[TOKENS][info["device_info"]["cloud_device_id"]]
         except KeyError:
             return
@@ -115,9 +117,9 @@ class GoogleHomeClient:
             return
 
         _LOGGER.debug(bluetooth_data)
-        self.hass.data[DOMAIN][host]["bluetooth"] = bluetooth_data
+        self.hass.data[DOMAIN][uuid]["bluetooth"] = bluetooth_data
 
-    async def update_alarms(self, host, entry: config_entries.ConfigEntry):
+    async def update_alarms(self, host, uuid, entry: config_entries.ConfigEntry):
         """Update alarms from Google Home."""
         from googledevices.api.connect import Cast
 
@@ -125,11 +127,11 @@ class GoogleHomeClient:
         session = async_get_clientsession(self.hass)
 
         try:
-            info = self.hass.data[DOMAIN][host]["info"]
+            info = self.hass.data[DOMAIN][uuid]["info"]
             token = self.hass.data[TOKENS][info["device_info"]["cloud_device_id"]]
         except KeyError:
-            if not self.hass.data[DOMAIN][host].get("alarms"):
-                self.hass.data[DOMAIN][host]["alarms"] = {"timer": [], "alarm": []}
+            if not self.hass.data[DOMAIN][uuid].get("alarms"):
+                self.hass.data[DOMAIN][uuid]["alarms"] = {"timer": [], "alarm": []}
             return
 
         assistant = await Cast(host, self.hass.loop, session).assistant()
@@ -140,4 +142,4 @@ class GoogleHomeClient:
             return
 
         _LOGGER.debug(alarms_data)
-        self.hass.data[DOMAIN][host]["alarms"] = alarms_data
+        self.hass.data[DOMAIN][uuid]["alarms"] = alarms_data
