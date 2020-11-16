@@ -11,10 +11,12 @@ from .const import (
     CONF_RSSI_THRESHOLD,
     CONF_TRACK_ALARMS,
     CONF_TRACK_DEVICES,
+    CONF_TRACK_NEW_DEVICES,
+    CONF_CONSIDER_HOME,
     DEFAULT_DEVICE_TYPES,
     DEFAULT_RSSI_THRESHOLD,
 )
-
+from homeassistant.components.device_tracker.const import DEFAULT_CONSIDER_HOME, DEFAULT_TRACK_NEW
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
@@ -67,8 +69,10 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.options.get(CONF_TRACK_DEVICES, True)): bool,
                     vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.options.get(CONF_TRACK_ALARMS, False)): bool,
+                    vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.options.get(CONF_TRACK_DEVICES, True)): bool,
+                    vol.Required(CONF_TRACK_NEW_DEVICES, default=self.config_entry.options.get(CONF_TRACK_NEW_DEVICES, DEFAULT_TRACK_NEW)): bool,
+                    vol.Required(CONF_CONSIDER_HOME, default=self.config_entry.options.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME.total_seconds())): int,
                     vol.Required(
                         CONF_RSSI_THRESHOLD,
                         default=self.config_entry.options.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),

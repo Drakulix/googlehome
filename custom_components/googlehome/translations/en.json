@@ -20,6 +20,8 @@
         "data": {
           "track_alarms": "Monitor Alarms",
           "track_devices": "Monitor Bluetooth Devices",
+          "track_new_devices": "Add new Devices",
+          "consider_home": "Timeout (in seconds) until a device is again considered 'not_home'",
           "rssi_threshold": "RSSI Threshold (Bluetooth)"
         }
       }

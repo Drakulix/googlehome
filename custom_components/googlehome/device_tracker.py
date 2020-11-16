@@ -6,7 +6,8 @@ from pychromecast.socket_client import (
     CONNECTION_STATUS_DISCONNECTED,
 )
 
-from homeassistant.components.device_tracker import DeviceScanner
+from homeassistant.components.device_tracker.legacy import DeviceTracker
+from homeassistant.components.device_tracker.const import SOURCE_TYPE_BLUETOOTH, DEFAULT_CONSIDER_HOME, DEFAULT_TRACK_NEW
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import slugify
 
@@ -19,7 +20,7 @@ from homeassistant.components.cast.const import (
 from homeassistant.components.cast.helpers import ChromecastInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from .const import CLIENT, DOMAIN, NAME, CONF_RSSI_THRESHOLD, CONF_DEVICE_TYPES, DEFAULT_RSSI_THRESHOLD, DEFAULT_DEVICE_TYPES
+from .const import CLIENT, DOMAIN, NAME, CONF_RSSI_THRESHOLD, CONF_DEVICE_TYPES, CONF_CONSIDER_HOME, CONF_TRACK_NEW_DEVICES, DEFAULT_RSSI_THRESHOLD, DEFAULT_DEVICE_TYPES
 from .helpers import ChromecastMonitor
 
 
@@ -28,16 +29,15 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=10)
 
 monitors = []
-async def async_setup_entry(hass, config_entry, async_see):
+async def async_setup_entry(hass, config_entry, async_add_entities):
     """Setup the Google Home scanner platform"""
     monitor = DeviceTrackerMonitor()
-    await monitor.async_init(hass, config_entry, async_see)
+    await monitor.async_init(hass, config_entry)
     monitors.append(monitor)
 
 class DeviceTrackerMonitor(ChromecastMonitor):
-    async def async_init(self, hass, config_entry, async_see):
+    async def async_init(self, hass, config_entry):
         self._config_entry = config_entry
-        self._async_see = async_see
         await super().async_init(hass)
 
     async def supported(self, discover: ChromecastInfo) -> bool:
@@ -46,7 +46,7 @@ class DeviceTrackerMonitor(ChromecastMonitor):
 
     async def setup(self, discover: ChromecastInfo):
         scanner = GoogleHomeDeviceScanner(
-            self._hass, self._hass.data[CLIENT], self._config_entry, discover, self._async_see
+            self._hass, self._hass.data[CLIENT], self._config_entry, discover
         )
         await scanner.async_init()
         return [scanner]
@@ -57,15 +57,20 @@ class DeviceTrackerMonitor(ChromecastMonitor):
             await entity.async_deinit()
 
 
-class GoogleHomeDeviceScanner():
+class GoogleHomeDeviceScanner(DeviceTracker):
     """This class queries a Google Home unit."""
 
-    def __init__(self, hass, client, config, device, async_see):
+    def __init__(self, hass, client, config, device):
         """Initialize the scanner."""
-        self.async_see = async_see
+        super().__init__(
+            hass,
+            timedelta(seconds=config.options.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME.total_seconds())),
+            config.options.get(CONF_TRACK_NEW_DEVICES, DEFAULT_TRACK_NEW),
+            {}, list(),
+        )
         self.hass = hass
-        self.rssi = config.options.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD),
-        self.device_types = config.options.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES),
+        self.rssi = config.options.get(CONF_RSSI_THRESHOLD, DEFAULT_RSSI_THRESHOLD)
+        self.device_types = config.options.get(CONF_DEVICE_TYPES, DEFAULT_DEVICE_TYPES)
         self.host = device.host
         self.uuid = device.uuid
         self.name = device.friendly_name
@@ -117,16 +122,17 @@ class GoogleHomeDeviceScanner():
                 device["device_type"] not in self.device_types
                 or device["rssi"] < self.rssi
             ):
+                _LOGGER.debug("Skipping: %s cause: %s, %s, %i, %i",
+                    device["mac_address"],
+                    device["device_type"],
+                    str(self.device_types),
+                    device["rssi"],
+                    self.rssi,
+                )
                 continue
 
-            name = "{} {}".format(self.host, device["mac_address"])
-
             attributes = {}
-            attributes["btle_mac_address"] = device["mac_address"]
             attributes["ghname"] = self.name
             attributes["rssi"] = device["rssi"]
-            attributes["source_type"] = "bluetooth"
-            if device["name"]:
-                attributes["name"] = device["name"]
 
-            await self.async_see(dev_id=slugify(name), attributes=attributes)
+            await self.async_see(mac=device["mac_address"], host_name=device.get("name"), source_type=SOURCE_TYPE_BLUETOOTH, attributes=attributes)

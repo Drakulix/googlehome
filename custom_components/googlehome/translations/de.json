@@ -20,6 +20,8 @@
         "data": {
           "track_alarms": "Erfasse gestellte Timer und Wecker",
           "track_devices": "Verfolge Bluetooth Geräte in der Nähe",
+          "track_new_devices": "Füge neue Geräte hinzu",
+          "consider_home": "Zeit (in Sekunden) bis ein Gerät wieder als nicht in der Nähe angesehen wird",
           "rssi_threshold": "RSSI Grenze (Bluetooth)"
         }
       }
