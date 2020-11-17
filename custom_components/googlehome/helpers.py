@@ -51,6 +51,8 @@ class ChromecastMonitor:
 
     async def async_cast_removed(self, discover: ChromecastInfo):
         _LOGGER.debug("Removed {}".format(discover.uuid))
+        if discover.is_audio_group:
+            return
 
         info = self._hass.data[DOMAIN][discover.uuid]["info"]
         if info["device_info"]["cloud_device_id"] in self._active_devices:
