@@ -65,7 +65,8 @@ class GoogleHomeDeviceScanner(DeviceTracker):
         super().__init__(
             hass,
             timedelta(seconds=config.options.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME.total_seconds())),
-            config.options.get(CONF_TRACK_NEW_DEVICES, DEFAULT_TRACK_NEW),
+            #config.options.get(CONF_TRACK_NEW_DEVICES, DEFAULT_TRACK_NEW),
+            True, # TODO migrate to the new device tracker api
             {}, list(),
         )
         self.hass = hass
@@ -136,3 +137,6 @@ class GoogleHomeDeviceScanner(DeviceTracker):
             attributes["rssi"] = device["rssi"]
 
             await self.async_see(mac=device["mac_address"], host_name=device.get("name"), source_type=SOURCE_TYPE_BLUETOOTH, attributes=attributes)
+
+    async def async_update_config(self, path, dev_id, device):
+        pass

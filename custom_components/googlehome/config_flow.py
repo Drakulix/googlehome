@@ -71,7 +71,7 @@ class GoogleHomeOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Required(CONF_TRACK_ALARMS, default=self.config_entry.options.get(CONF_TRACK_ALARMS, False)): bool,
                     vol.Required(CONF_TRACK_DEVICES, default=self.config_entry.options.get(CONF_TRACK_DEVICES, True)): bool,
-                    vol.Required(CONF_TRACK_NEW_DEVICES, default=self.config_entry.options.get(CONF_TRACK_NEW_DEVICES, DEFAULT_TRACK_NEW)): bool,
+                    #vol.Required(CONF_TRACK_NEW_DEVICES, default=self.config_entry.options.get(CONF_TRACK_NEW_DEVICES, DEFAULT_TRACK_NEW)): bool,
                     vol.Required(CONF_CONSIDER_HOME, default=self.config_entry.options.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME.total_seconds())): int,
                     vol.Required(
                         CONF_RSSI_THRESHOLD,
