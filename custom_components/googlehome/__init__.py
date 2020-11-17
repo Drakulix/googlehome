@@ -85,8 +85,6 @@ class GoogleHomeClient:
         _LOGGER.debug("Updating Google Home info for %s", host)
         session = async_get_clientsession(self.hass)
 
-        # eureka_info might not return something, if the device just started up
-        await asyncio.sleep(10)
         device_info = await Cast(host, self.hass.loop, session).info()
         for token in self.hass.data[TOKENS].values():
             device_info_data = await device_info.get_device_info(token)

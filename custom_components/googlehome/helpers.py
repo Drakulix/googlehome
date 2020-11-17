@@ -7,6 +7,7 @@ from homeassistant.components.cast.const import (
 from homeassistant.components.cast.helpers import ChromecastInfo, ChromeCastZeroconf
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
+import asyncio
 import pychromecast
 import logging
 
@@ -23,12 +24,16 @@ class ChromecastMonitor:
         async_dispatcher_connect(hass, SIGNAL_CAST_REMOVED, self.async_cast_removed)
         async_dispatcher_connect(hass, SIGNAL_CAST_DISCOVERED, self.async_cast_discovered)
         for chromecast in hass.data[KNOWN_CHROMECAST_INFO_KEY].copy().values():
-            await self.async_cast_discovered(chromecast)
+            await self.async_cast_discovered(chromecast, True)
 
-    async def async_cast_discovered(self, discover: ChromecastInfo):
+    async def async_cast_discovered(self, discover: ChromecastInfo, likely_already_started=False):
         _LOGGER.debug("Discovered {}".format(discover.host))
         if discover.is_audio_group:
             return
+
+        if not likely_already_started:
+            # eureka_info might not return something, if the device just started up
+            await asyncio.sleep(10)
 
         self._hass.data[DOMAIN].setdefault(discover.uuid, {})
         if await self._hass.data[CLIENT].update_info(discover.host, discover.uuid):
