@@ -3,16 +3,17 @@
     "step": {
       "user": {
         "title": "Login to Google",
-        "description": "Please provide login credentials to a linked google account of your google home and nest devices. If you are using 2-factor authentication, you need to use an application password. You may delete the application password once the integration is sucessfully setup.",
+        "description": "Please provide login credentials to a linked google account of your google home and nest devices. If you are using 2-factor authentication, you need to use an application password. You may delete the application password once the integration is sucessfully setup. If you encounter a problem with the login, you can also provide a self-fetched master token in the appropriate field (this field can be left empty if the username and password combination is working for you).",
         "data": {
           "username": "Google Account",
           "password": "Password",
-          "master_token": "Master Token"
+          "master_token": "Master Token (Optional)"
         }
       }
     },
     "error": {
-      "auth_error": "Login failed"
+      "auth_error": "Login failed",
+      "master_token_incorrect": "Incorrect master token"
     }
   },
   "options": {
