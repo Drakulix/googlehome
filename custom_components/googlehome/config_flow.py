@@ -28,6 +28,14 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
+            if user_input[CONF_MASTER_TOKEN]:
+                return self.async_create_entry(
+                    title=user_input[CONF_USERNAME],
+                    data={
+                        CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_MASTER_TOKEN: user_input[CONF_MASTER_TOKEN],
+                    },
+                )
             mt = await self.hass.async_add_executor_job(
                 get_master_token, user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
             )
@@ -45,6 +53,7 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = OrderedDict()
         data_schema[vol.Required(CONF_USERNAME)] = str
         data_schema[vol.Required(CONF_PASSWORD)] = str
+        data_schema[vol.Optional(CONF_MASTER_TOKEN)] = str
 
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(data_schema), errors=errors
