@@ -1,7 +1,7 @@
 from homeassistant import config_entries
 from homeassistant.core import callback
 from collections import OrderedDict
-from .auth import get_master_token
+from .auth import get_master_token, get_access_token
 from .const import (
     DOMAIN,
     CONF_USERNAME,
@@ -28,23 +28,39 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
-            mt = await self.hass.async_add_executor_job(
-                get_master_token, user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
-            )
-            if mt is not None:
-                return self.async_create_entry(
-                    title=user_input[CONF_USERNAME],
-                    data={
-                        CONF_USERNAME: user_input[CONF_USERNAME],
-                        CONF_MASTER_TOKEN: mt,
-                    },
+            if user_input[CONF_MASTER_TOKEN]:
+                at = await self.hass.async_add_executor_job(
+                    get_access_token, user_input[CONF_USERNAME], user_input[CONF_MASTER_TOKEN]
                 )
+                if at is not None:
+                    return self.async_create_entry(
+                        title=user_input[CONF_USERNAME],
+                        data={
+                            CONF_USERNAME: user_input[CONF_USERNAME],
+                            CONF_MASTER_TOKEN: user_input[CONF_MASTER_TOKEN],
+                        },
+                    )
+                else:
+                    errors["base"] = "master_token_incorrect"
             else:
-                errors["base"] = "auth_error"
+                mt = await self.hass.async_add_executor_job(
+                    get_master_token, user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
+                )
+                if mt is not None:
+                    return self.async_create_entry(
+                        title=user_input[CONF_USERNAME],
+                        data={
+                            CONF_USERNAME: user_input[CONF_USERNAME],
+                            CONF_MASTER_TOKEN: mt,
+                        },
+                    )
+                else:
+                    errors["base"] = "auth_error"
 
         data_schema = OrderedDict()
         data_schema[vol.Required(CONF_USERNAME)] = str
         data_schema[vol.Required(CONF_PASSWORD)] = str
+        data_schema[vol.Optional(CONF_MASTER_TOKEN)] = str
 
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(data_schema), errors=errors
