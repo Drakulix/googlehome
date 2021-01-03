@@ -21,7 +21,7 @@ from homeassistant.components.cast.const import (
 from homeassistant.components.cast.helpers import ChromecastInfo, ChromeCastZeroconf
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from .const import CLIENT, DOMAIN, NAME
+from .const import CLIENT, DOMAIN, NAME, STATUS_NONE, STATUS_SET, STATUS_ACTIVE
 from .helpers import ChromecastMonitor
 
 SCAN_INTERVAL = timedelta(seconds=10)
@@ -80,35 +80,42 @@ class GoogleHomeAlarm(Entity):
         self._config_entry = config_entry
         self._condition = condition
         self._name = None
-        self._state = None
-        self._available = True
+        self._state = STATUS_NONE
+        self._attributes = []
         self._name = "{} {}".format(name, SENSOR_TYPES[self._condition])
         self._unique_id = cloud_device_id + '_' + condition
         self._connected = True
 
     async def async_update(self):
         """Update the data."""
-        if not self._connected:
-            return
-
         await self._client.update_alarms(self._host, self._device.uuid, self._config_entry)
         data = self.hass.data[DOMAIN][self._device.uuid]
 
         alarms = data.get("alarms", {})
         if self._condition not in alarms or not alarms[self._condition]:
-            self._available = False
+            self._state = STATUS_NONE
+            self._attributes = []
             return
 
-        self._available = True
-        time_date = dt_util.utc_from_timestamp(
-            min(element["fire_time"] for element in alarms[self._condition]) / 1000
-        )
-        self._state = time_date.isoformat()
+        elements = sorted(alarms[self._condition], key=lambda element: element["fire_time"])
+        state = STATUS_SET if elements[0]["status"] == 1 else STATUS_ACTIVE
+        attributes = [{
+            "status": STATUS_SET if x["status"] == 1 else STATUS_ACTIVE,
+            "fire_time": dt_util.utc_from_timestamp(x["fire_time"] / 1000).isoformat(),
+        } for x in elements]
+
+        self._attributes = { "pending": attributes }
+        self._state = state
 
     @property
     def state(self):
         """Return the state."""
         return self._state
+
+    @property
+    def device_state_attributes(self):
+        """Return the attributes."""
+        return self._attributes
 
     @property
     def name(self):
@@ -143,7 +150,7 @@ class GoogleHomeAlarm(Entity):
     @property
     def available(self):
         """Return the availability state."""
-        return self._available
+        return self._connected
 
     @property
     def icon(self):
