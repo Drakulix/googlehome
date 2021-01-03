@@ -138,5 +138,8 @@ class GoogleHomeDeviceScanner(DeviceTracker):
 
             await self.async_see(mac=device["mac_address"], host_name=device.get("name"), source_type=SOURCE_TYPE_BLUETOOTH, attributes=attributes)
 
+        if now:
+            self.async_update_stale(now)
+
     async def async_update_config(self, path, dev_id, device):
         pass
