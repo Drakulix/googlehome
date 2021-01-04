@@ -28,7 +28,7 @@ class GoogleHomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
-            if user_input[CONF_MASTER_TOKEN]:
+            if CONF_MASTER_TOKEN in user_input:
                 at = await self.hass.async_add_executor_job(
                     get_access_token, user_input[CONF_USERNAME], user_input[CONF_MASTER_TOKEN]
                 )
