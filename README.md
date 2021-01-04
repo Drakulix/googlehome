@@ -20,7 +20,7 @@ This is a custom component that allows tracking alarms/timers of google/nest hom
 - Enable the features you want to use in the Integrations tab. ![](images/options.png)
 - When bluetooth monitoring is enabled devices will popup as device_tracker entries. You can use `ghname` to match which google home device discovered your bluetooth device and `rssi` to track the distance. ![](images/device_tracker.png)
 - When monitoring alarms/timers is enabled two sensors will be added to your home-assistant instance per google home device. The `pending` attribute contains a sorted list of pending alarms/timers for more advanced automations using templates. ![](images/sensors.png)
-- The state alternates between `none` (if none are set), `pending` (if any alarms/timers are set) and `ringing`.
+- The state alternates between `none` (if none are set), `waiting` (if any alarms/timers are set) and `ringing`.
 
 For a quick automation when an alarm is dismissed (and no new / snooze alarm has been set) you may use an automation like:
 ```yaml
