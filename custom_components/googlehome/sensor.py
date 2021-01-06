@@ -92,7 +92,9 @@ class GoogleHomeAlarm(Entity):
         data = self.hass.data[DOMAIN][self._device.uuid]
 
         alarms = data.get("alarms", {})
-        if self._condition not in alarms or not alarms[self._condition]:
+        if self._condition not in alarms:
+            return
+        if not alarms[self._condition]:
             self._state = STATUS_NONE
             self._attributes = []
             return
