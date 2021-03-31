@@ -1,3 +1,18 @@
+# Deprecated - development of this component will not continue.
+## As an alternative consider using [ha-google-home](https://github.com/leikoilja/ha-google-home) instead.
+
+ha-google-home has a cleaner codebase and is build by a set of talented developers.
+
+Despite being a rather new project, it has gained a lot of traction very quickly, providing a more polished experience.
+
+It is currently lacking a bluetooth scanner feature, but that is being worked on and the one included in this repository has major issues anyway.
+
+This code will likely remain working in the forseeable future. If you insist on using it until feature parity has been established, I am happy to merge any fixes, but want to encourage you to drive ha-google-home forward instead.
+
+----
+
+# Original README
+
 ## Google Home Integration for [Home-Assistant](https://home-assistant.io)
 
 ### Fork of the original component before the [deprecation](https://github.com/home-assistant/home-assistant/pull/26035) with a workaround.
