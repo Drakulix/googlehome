@@ -1,6 +1,7 @@
 {
   "domain": "googlehome",
   "name": "Googlehome",
+  "version": "0.4.1",
   "requirements": [
     "gpsoauth==0.4.1",
     "grpcio==1.31.0",
